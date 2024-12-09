@@ -20,7 +20,9 @@ func New() (serv *Server, err error) {
 		path    string
 		handler http.HandlerFunc
 	}{
-		{"GET /api/tracks/{id}", server.getTrack},
+		{"GET /api/tracks/{id}", server.trackByID},
+		{"GET /api/tracks/", server.listTracks},
+		{"GET /{$}", server.index},
 	}
 
 	for _, r := range routes {

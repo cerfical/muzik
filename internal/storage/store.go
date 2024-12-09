@@ -35,3 +35,11 @@ func (s *Store) Get(id int) (*Track, bool) {
 	}
 	return s.data[id], true
 }
+
+// GetAll retrieves all tracks from the store
+func (s *Store) GetAll() []*Track {
+	s.dataMu.Lock()
+	defer s.dataMu.Unlock()
+
+	return s.data
+}

@@ -1,0 +1,28 @@
+<html>
+
+<head>
+    <title>Muzik</title>
+    <script type="text/javascript">
+        fetch("/api/tracks")
+            .then(response => response.json())
+            .then(tracks => {
+                var tracksTable = document.getElementById("tracksTable")
+                tracks["data"].forEach(track => {
+                    var row = tracksTable.insertRow()
+                    row.insertCell().textContent = track["id"]
+                    row.insertCell().textContent = track["title"]
+                });
+            })
+    </script>
+</head>
+
+<body>
+    <table id="tracksTable">
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+        </tr>
+    </table>
+</body>
+
+</html>
