@@ -1,10 +1,10 @@
-package httpserv
+package serv
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/cerfical/muzik/internal/storage"
+	"github.com/cerfical/muzik/internal/stor"
 )
 
 // New creates and initializes a new server instance
@@ -34,7 +34,7 @@ func New() (serv *Server, err error) {
 // Server is an instance of the API server
 type Server struct {
 	mux   *http.ServeMux
-	store storage.Store
+	store stor.Store
 }
 
 // Run starts the server at the specified address

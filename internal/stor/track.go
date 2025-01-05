@@ -1,4 +1,4 @@
-package storage
+package stor
 
 // Track represents information about a single music track
 type Track struct {

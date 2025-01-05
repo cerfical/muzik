@@ -1,4 +1,4 @@
-package httpserv
+package serv
 
 import (
 	"encoding/json"
@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/cerfical/muzik/internal/storage"
+	"github.com/cerfical/muzik/internal/stor"
 )
 
 type response struct {
-	Status  int              `json:"-"`
-	Message string           `json:"msg"`
-	Data    []*storage.Track `json:"data"`
+	Status  int           `json:"-"`
+	Message string        `json:"msg"`
+	Data    []*stor.Track `json:"data"`
 }
 
 func (s *Server) index(wr http.ResponseWriter, req *http.Request) {
@@ -39,7 +39,7 @@ func (s *Server) lookupTrackByID(trackID string) *response {
 	if !ok {
 		return noTrackWithID(trackNumID)
 	}
-	return tracksFound([]*storage.Track{track})
+	return tracksFound([]*stor.Track{track})
 }
 
 func (s *Server) listTracks(wr http.ResponseWriter, req *http.Request) {
@@ -54,7 +54,7 @@ func writeResponse(wr http.ResponseWriter, resp *response) {
 	// normalize the response so that the returned data is either empty ([]),
 	// or populated with requested data items, but never null
 	if resp.Data == nil {
-		resp.Data = []*storage.Track{}
+		resp.Data = []*stor.Track{}
 	}
 
 	jsonenc := json.NewEncoder(wr)
@@ -78,7 +78,7 @@ func makeErrorResponse(msg string) *response {
 	}
 }
 
-func tracksFound(data []*storage.Track) *response {
+func tracksFound(data []*stor.Track) *response {
 	return &response{
 		Status: http.StatusOK,
 		Data:   data,

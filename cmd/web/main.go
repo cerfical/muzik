@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/cerfical/muzik/internal/httpserv"
+	"github.com/cerfical/muzik/internal/serv"
 )
 
 func main() {
-	server, err := httpserv.New()
+	server, err := serv.New()
 	if err != nil {
 		log.Fatalf("server startup: %v", err)
 	}
