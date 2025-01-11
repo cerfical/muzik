@@ -3,7 +3,6 @@ package tracks
 import (
 	"net/http"
 
-	"github.com/cerfical/muzik/internal/httpserv/api"
 	"github.com/cerfical/muzik/internal/storage"
 )
 
@@ -16,5 +15,5 @@ type trackLister struct {
 }
 
 func (h *trackLister) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
-	api.WriteDataItems(wr, h.store.GetAll())
+	writeTracks(wr, h.store.GetAll())
 }

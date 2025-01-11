@@ -10,7 +10,7 @@
                 tracks["data"].forEach(track => {
                     var row = tracksTable.insertRow()
                     row.insertCell().textContent = track["id"]
-                    row.insertCell().textContent = track["title"]
+                    row.insertCell().textContent = track["attributes"]["title"]
                 });
             })
     </script>

@@ -11,15 +11,13 @@ type Store struct {
 	dataMu sync.Mutex
 }
 
-func (s *Store) Create(title string) *model.Track {
+func (s *Store) Create(attrs *model.TrackAttrs) *model.Track {
 	s.dataMu.Lock()
 	defer s.dataMu.Unlock()
 
 	track := &model.Track{
-		ID: len(s.data),
-		Attrs: model.TrackAttrs{
-			Title: title,
-		},
+		ID:    len(s.data),
+		Attrs: attrs,
 	}
 	s.data = append(s.data, track)
 	return track

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/cerfical/muzik/internal/httpserv/api"
 	"github.com/cerfical/muzik/internal/storage"
 )
 
@@ -19,14 +18,14 @@ type trackGetter struct {
 func (h *trackGetter) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
 	trackID, err := strconv.Atoi(req.PathValue("id"))
 	if err != nil {
-		api.WriteError(wr, http.StatusNotFound, "track not found")
+		writeErrorResponse(wr, http.StatusNotFound, "track not found")
 		return
 	}
 
 	track, ok := h.store.Get(trackID)
 	if !ok {
-		api.WriteError(wr, http.StatusNotFound, "track not found")
+		writeErrorResponse(wr, http.StatusNotFound, "track not found")
 		return
 	}
-	api.WriteDataItem(wr, track)
+	writeTrack(wr, track)
 }

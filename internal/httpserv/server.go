@@ -14,7 +14,8 @@ func New() *Server {
 		handler http.Handler
 	}{
 		{"GET /api/tracks/{id}", tracks.Get(&server.store)},
-		{"GET /api/tracks/", tracks.List(&server.store)},
+		{"GET /api/tracks/{$}", tracks.List(&server.store)},
+		{"POST /api/tracks/{$}", tracks.Create(&server.store)},
 		{"GET /{$}", http.HandlerFunc(server.index)},
 	}
 
