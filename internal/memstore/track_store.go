@@ -1,4 +1,4 @@
-package storage
+package memstore
 
 import (
 	"sync"
@@ -6,24 +6,24 @@ import (
 	"github.com/cerfical/muzik/internal/model"
 )
 
-type Store struct {
+type TrackStore struct {
 	data   []*model.Track
 	dataMu sync.Mutex
 }
 
-func (s *Store) Create(attrs *model.TrackAttrs) *model.Track {
+func (s *TrackStore) CreateTrack(info *model.TrackInfo) *model.Track {
 	s.dataMu.Lock()
 	defer s.dataMu.Unlock()
 
-	track := &model.Track{
-		ID:    len(s.data),
-		Attrs: attrs,
+	t := &model.Track{
+		ID:   len(s.data),
+		Info: info,
 	}
-	s.data = append(s.data, track)
-	return track
+	s.data = append(s.data, t)
+	return t
 }
 
-func (s *Store) Get(id int) (*model.Track, bool) {
+func (s *TrackStore) TrackByID(id int) (*model.Track, bool) {
 	if id < 0 {
 		return nil, false
 	}
@@ -37,7 +37,7 @@ func (s *Store) Get(id int) (*model.Track, bool) {
 	return s.data[id], true
 }
 
-func (s *Store) GetAll() []*model.Track {
+func (s *TrackStore) AllTracks() []*model.Track {
 	d := func() []*model.Track {
 		s.dataMu.Lock()
 		defer s.dataMu.Unlock()
