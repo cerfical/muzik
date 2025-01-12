@@ -4,12 +4,14 @@ import (
 	"net/http"
 
 	"github.com/cerfical/muzik/internal/httpserv/api"
+	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/model"
 )
 
 type Server struct {
 	TrackStore model.TrackStore
 	Addr       string
+	Log        *log.Logger
 }
 
 func (s *Server) Run() error {
