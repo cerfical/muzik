@@ -1,6 +1,7 @@
 package httpserv
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/cerfical/muzik/internal/httpserv/api"
@@ -17,7 +18,12 @@ type Server struct {
 func (s *Server) Run() error {
 	mux := http.NewServeMux()
 
-	tracks := api.TrackHandler{Store: s.TrackStore}
+	log := s.Log.WithContextValue(keyRequestID{})
+	tracks := api.TrackHandler{
+		Store: s.TrackStore,
+		Log:   log,
+	}
+
 	routes := []struct {
 		path    string
 		handler http.HandlerFunc
@@ -32,9 +38,30 @@ func (s *Server) Run() error {
 		mux.HandleFunc(r.path, r.handler)
 	}
 
-	return http.ListenAndServe(s.Addr, mux)
+	return http.ListenAndServe(s.Addr, http.HandlerFunc(requestLogger(log, mux)))
 }
 
-func (s *Server) index(wr http.ResponseWriter, req *http.Request) {
-	http.ServeFile(wr, req, "static/index.html")
+func requestLogger(l *log.Logger, next http.Handler) http.HandlerFunc {
+	requestID := 0
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), keyRequestID{}, requestID)
+		requestID++
+
+		l.WithStrings(
+			"method", r.Method,
+			"path", r.URL.Path,
+		).Info(ctx, "incoming request")
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+}
+
+type keyRequestID struct{}
+
+func (keyRequestID) String() string {
+	return "request_id"
+}
+
+func (s *Server) index(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "static/index.html")
 }

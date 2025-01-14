@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	FatalLevel = Level(zerolog.FatalLevel)
-	ErrorLevel = Level(zerolog.ErrorLevel)
-	InfoLevel  = Level(zerolog.InfoLevel)
-	Disabled   = Level(zerolog.Disabled)
+	LevelNone  = Level(zerolog.Disabled)
+	LevelFatal = Level(zerolog.FatalLevel)
+	LevelError = Level(zerolog.ErrorLevel)
+	LevelInfo  = Level(zerolog.InfoLevel)
 )
 
 type Level zerolog.Level
@@ -18,13 +18,13 @@ type Level zerolog.Level
 func (l *Level) UnmarshalText(text []byte) error {
 	switch text := string(text); text {
 	case "fatal":
-		*l = FatalLevel
+		*l = LevelFatal
 	case "error":
-		*l = ErrorLevel
+		*l = LevelError
 	case "info":
-		*l = InfoLevel
+		*l = LevelInfo
 	case "none":
-		*l = Disabled
+		*l = LevelNone
 	default:
 		return errors.New("unknown log level")
 	}
@@ -34,13 +34,13 @@ func (l *Level) UnmarshalText(text []byte) error {
 func (l Level) MarshalText() ([]byte, error) {
 	var text string
 	switch l {
-	case FatalLevel:
+	case LevelFatal:
 		text = "fatal"
-	case ErrorLevel:
+	case LevelError:
 		text = "error"
-	case InfoLevel:
+	case LevelInfo:
 		text = "info"
-	case Disabled:
+	case LevelNone:
 		text = "none"
 	default:
 		return nil, errors.New("unknown log level")
