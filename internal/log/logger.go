@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -26,6 +27,7 @@ type Logger struct {
 
 func (l *Logger) Fatal(ctx context.Context, msg string) {
 	l.log(ctx, LevelFatal, msg)
+	os.Exit(1)
 }
 
 func (l *Logger) Error(ctx context.Context, msg string) {
