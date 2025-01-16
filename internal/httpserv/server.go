@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/cerfical/muzik/internal/httpserv/api"
@@ -90,11 +91,11 @@ func (s *Server) setupRouter() http.Handler {
 }
 
 func requestLogger(l *log.Logger, next http.Handler) http.HandlerFunc {
-	requestID := 0
+	var requestID atomic.Uint64
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), keyRequestID{}, requestID)
-		requestID++
+		id := requestID.Add(1)
+		ctx := context.WithValue(r.Context(), keyRequestID{}, id)
 
 		l.WithStrings(
 			"method", r.Method,
