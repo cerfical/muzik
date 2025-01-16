@@ -2,7 +2,11 @@ package httpserv
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/cerfical/muzik/internal/httpserv/api"
 	"github.com/cerfical/muzik/internal/log"
@@ -16,6 +20,51 @@ type Server struct {
 }
 
 func (s *Server) Run() error {
+	serv := http.Server{
+		Addr:    s.Addr,
+		Handler: s.setupRouter(),
+	}
+
+	// Graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	shutdownChan := make(chan struct{})
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	defer func() {
+		signal.Stop(sigChan)
+
+		// Make sure the goroutine responsible for graceful shutdown is terminated properly
+		close(sigChan)
+		<-shutdownChan
+	}()
+
+	go func() {
+		defer close(shutdownChan)
+
+		// If the server was terminated due to some other error, return immediately
+		if _, ok := <-sigChan; !ok {
+			return
+		}
+
+		// Try to shutdown the server cleanly and if that fails, close the server
+		if err := serv.Shutdown(context.Background()); err != nil {
+			s.Log.WithError(err).
+				Error("graceful shutdown failed")
+
+			if err := serv.Close(); err != nil {
+				s.Log.WithError(err).
+					Error("server shutdown failed")
+			}
+		}
+	}()
+
+	if err := serv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) setupRouter() http.Handler {
 	mux := http.NewServeMux()
 
 	log := s.Log.WithContextValue(keyRequestID{})
@@ -37,8 +86,7 @@ func (s *Server) Run() error {
 	for _, r := range routes {
 		mux.HandleFunc(r.path, r.handler)
 	}
-
-	return http.ListenAndServe(s.Addr, http.HandlerFunc(requestLogger(log, mux)))
+	return http.HandlerFunc(requestLogger(log, mux))
 }
 
 func requestLogger(l *log.Logger, next http.Handler) http.HandlerFunc {
