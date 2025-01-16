@@ -21,7 +21,7 @@ type Server struct {
 }
 
 func (s *Server) Run() {
-	s.Log.WithString("addr", s.Addr).
+	s.Log.WithFields("addr", s.Addr).
 		Info("Server startup")
 
 	serv := http.Server{
@@ -101,11 +101,11 @@ func requestLogger(l *log.Logger, next http.Handler) http.HandlerFunc {
 		id := requestID.Add(1)
 		ctx := context.WithValue(r.Context(), keyRequestID{}, id)
 
-		l.WithStrings(
-			"method", r.Method,
-			"path", r.URL.Path,
-		).
-			WithContext(ctx).
+		l.WithContext(ctx).
+			WithFields(
+				"method", r.Method,
+				"path", r.URL.Path,
+			).
 			Info("Incoming request")
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}

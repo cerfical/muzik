@@ -46,39 +46,26 @@ func (l *Logger) WithLevel(lvl Level) *Logger {
 	return &Logger{l.logger.Level(zerolog.Level(lvl))}
 }
 
-func (l *Logger) WithError(err error) *Logger {
-	return &Logger{l.logger.With().Err(err).Logger()}
-}
-
-func (l *Logger) WithString(key, val string) *Logger {
-	return &Logger{l.logger.With().Str(key, val).Logger()}
-}
-
-func (l *Logger) WithInt(key string, val int) *Logger {
-	return &Logger{l.logger.With().Int(key, val).Logger()}
-}
-
 func (l *Logger) WithContext(ctx context.Context) *Logger {
 	return &Logger{l.logger.With().Ctx(ctx).Logger()}
 }
 
-func (l *Logger) WithContextValue(ctxKey any) *Logger {
+func (l *Logger) WithContextValue(key any) *Logger {
 	f := func(e *zerolog.Event, _ zerolog.Level, _ string) {
-		if v := e.GetCtx().Value(ctxKey); v != nil {
-			e.Any(fmt.Sprintf("%v", ctxKey), v)
+		if v := e.GetCtx().Value(key); v != nil {
+			e.Any(fmt.Sprintf("%v", key), v)
 		}
 	}
 	return &Logger{l.logger.Hook(zerolog.HookFunc(f))}
 }
 
-func (l *Logger) WithStrings(attrs ...string) *Logger {
-	if len(attrs)%2 != 0 {
+func (l *Logger) WithFields(fields ...any) *Logger {
+	if len(fields)%2 != 0 {
 		panic("expected an even number of arguments")
 	}
+	return &Logger{l.logger.With().Fields(fields).Logger()}
+}
 
-	ctxLogger := l
-	for i := 0; i < len(attrs); i += 2 {
-		ctxLogger = ctxLogger.WithString(attrs[i], attrs[i+1])
-	}
-	return ctxLogger
+func (l *Logger) WithError(err error) *Logger {
+	return &Logger{l.logger.With().Err(err).Logger()}
 }
