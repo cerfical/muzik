@@ -15,15 +15,13 @@ import (
 )
 
 type Server struct {
-	TrackStore model.TrackStore
-	Addr       string
-	Log        *log.Logger
+	TrackStore      model.TrackStore
+	Addr            string
+	Log             *log.Logger
+	shutdownErrChan chan error
 }
 
-func (s *Server) Run() {
-	s.Log.WithFields("addr", s.Addr).
-		Info("Server startup")
-
+func (s *Server) Run() error {
 	log := s.Log.WithContextKey(middleware.RequestID)
 	router := setupRouter(api.TrackHandler{
 		Store: s.TrackStore,
@@ -39,43 +37,38 @@ func (s *Server) Run() {
 	}
 
 	// Graceful shutdown
+	s.shutdownErrChan = make(chan error)
 	sigChan := make(chan os.Signal, 1)
-	shutdownChan := make(chan struct{})
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	defer func() {
+		// Make sure the shutdown goroutine is terminated properly
 		signal.Stop(sigChan)
-
-		// Make sure the goroutine responsible for graceful shutdown is terminated properly
 		close(sigChan)
-		<-shutdownChan
 	}()
 
 	go func() {
-		defer close(shutdownChan)
+		var err error
+		defer func() {
+			s.shutdownErrChan <- err
+		}()
 
 		// If the server was terminated due to some other error, return immediately
 		if _, ok := <-sigChan; !ok {
 			return
 		}
-		s.Log.Info("Server shutdown")
 
 		// Try to shutdown the server cleanly and if that fails, close the server
-		if err := serv.Shutdown(context.Background()); err != nil {
-			s.Log.WithError(err).
-				Error("Failed to perform graceful shutdown")
-
-			if err := serv.Close(); err != nil {
-				s.Log.WithError(err).
-					Error("Failed to close the server")
-			}
+		err = serv.Shutdown(context.Background())
+		if err != nil {
+			serv.Close()
 		}
 	}()
 
 	if err := serv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-		s.Log.WithError(err).
-			Error("Abnormal server shutdown")
+		return err
 	}
+	return nil
 }
 
 func setupRouter(tracks api.TrackHandler) http.Handler {
@@ -98,4 +91,9 @@ func setupRouter(tracks api.TrackHandler) http.Handler {
 
 func index(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "static/index.html")
+}
+
+func (s *Server) Close() error {
+	defer close(s.shutdownErrChan)
+	return <-s.shutdownErrChan
 }

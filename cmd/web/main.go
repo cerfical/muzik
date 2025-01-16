@@ -20,5 +20,19 @@ func main() {
 		Log:        log,
 	}
 
-	server.Run()
+	log.WithFields("addr", server.Addr).
+		Info("Starting up the server")
+
+	defer func() {
+		log.Info("Shutting down the server")
+		if err := server.Close(); err != nil {
+			log.WithError(err).
+				Error("Server shutdown failed")
+		}
+	}()
+
+	if err := server.Run(); err != nil {
+		log.WithError(err).
+			Error("Server terminated abnormally")
+	}
 }
