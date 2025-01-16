@@ -59,7 +59,8 @@ func (h *TrackHandler) writeError(w http.ResponseWriter, r *http.Request, status
 	}{[]responseError{{strconv.Itoa(status), msg}}}
 
 	h.Log.WithError(err).
-		Error(r.Context(), msg)
+		WithContext(r.Context()).
+		Error(msg)
 	h.writeResponse(w, r, status, resp)
 }
 
@@ -88,6 +89,7 @@ func (h *TrackHandler) writeResponse(w http.ResponseWriter, r *http.Request, sta
 
 	if err := json.NewEncoder(w).Encode(&resp); err != nil {
 		h.Log.WithError(err).
-			Error(r.Context(), "failed to encode response body")
+			WithContext(r.Context()).
+			Error("failed to encode response body")
 	}
 }

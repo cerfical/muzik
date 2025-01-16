@@ -51,7 +51,9 @@ func requestLogger(l *log.Logger, next http.Handler) http.HandlerFunc {
 		l.WithStrings(
 			"method", r.Method,
 			"path", r.URL.Path,
-		).Info(ctx, "incoming request")
+		).
+			WithContext(ctx).
+			Info("incoming request")
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }
