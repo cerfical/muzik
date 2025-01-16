@@ -20,7 +20,10 @@ type Server struct {
 	Log        *log.Logger
 }
 
-func (s *Server) Run() error {
+func (s *Server) Run() {
+	s.Log.WithString("addr", s.Addr).
+		Info("Server startup")
+
 	serv := http.Server{
 		Addr:    s.Addr,
 		Handler: s.setupRouter(),
@@ -46,23 +49,24 @@ func (s *Server) Run() error {
 		if _, ok := <-sigChan; !ok {
 			return
 		}
+		s.Log.Info("Server shutdown")
 
 		// Try to shutdown the server cleanly and if that fails, close the server
 		if err := serv.Shutdown(context.Background()); err != nil {
 			s.Log.WithError(err).
-				Error("graceful shutdown failed")
+				Error("Failed to perform graceful shutdown")
 
 			if err := serv.Close(); err != nil {
 				s.Log.WithError(err).
-					Error("server shutdown failed")
+					Error("Failed to close the server")
 			}
 		}
 	}()
 
 	if err := serv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-		return err
+		s.Log.WithError(err).
+			Error("Abnormal server shutdown")
 	}
-	return nil
 }
 
 func (s *Server) setupRouter() http.Handler {
@@ -102,7 +106,7 @@ func requestLogger(l *log.Logger, next http.Handler) http.HandlerFunc {
 			"path", r.URL.Path,
 		).
 			WithContext(ctx).
-			Info("incoming request")
+			Info("Incoming request")
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }

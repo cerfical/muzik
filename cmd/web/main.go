@@ -20,11 +20,5 @@ func main() {
 		Log:        log,
 	}
 
-	log.WithString("addr", args.ServerAddr).
-		Info("server startup")
-
-	if err := server.Run(); err != nil {
-		log.WithError(err).
-			Fatal("server shutdown")
-	}
+	server.Run()
 }

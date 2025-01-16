@@ -17,13 +17,13 @@ type TrackHandler struct {
 func (h *TrackHandler) Get(w http.ResponseWriter, r *http.Request) {
 	trackID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		h.writeError(w, r, http.StatusNotFound, "track not found", err)
+		h.writeError(w, r, http.StatusNotFound, "track not found")
 		return
 	}
 
 	track, ok := h.Store.TrackByID(trackID)
 	if !ok {
-		h.writeError(w, r, http.StatusNotFound, "track not found", err)
+		h.writeError(w, r, http.StatusNotFound, "track not found")
 		return
 	}
 	h.writeTrack(w, r, http.StatusOK, track)
@@ -42,7 +42,7 @@ func (h *TrackHandler) Create(w http.ResponseWriter, r *http.Request) {
 	dec.DisallowUnknownFields()
 
 	if err := dec.Decode(&trackInfo); err != nil {
-		h.writeError(w, r, http.StatusBadRequest, "failed to decode request body", err)
+		h.writeError(w, r, http.StatusBadRequest, "failed to decode request body")
 		return
 	}
 
@@ -53,14 +53,11 @@ func (h *TrackHandler) Create(w http.ResponseWriter, r *http.Request) {
 	h.writeTrack(w, r, http.StatusCreated, track)
 }
 
-func (h *TrackHandler) writeError(w http.ResponseWriter, r *http.Request, status int, msg string, err error) {
+func (h *TrackHandler) writeError(w http.ResponseWriter, r *http.Request, status int, msg string) {
 	resp := struct {
 		Errors []responseError `json:"errors"`
 	}{[]responseError{{strconv.Itoa(status), msg}}}
 
-	h.Log.WithError(err).
-		WithContext(r.Context()).
-		Error(msg)
 	h.writeResponse(w, r, status, resp)
 }
 
@@ -90,6 +87,6 @@ func (h *TrackHandler) writeResponse(w http.ResponseWriter, r *http.Request, sta
 	if err := json.NewEncoder(w).Encode(&resp); err != nil {
 		h.Log.WithError(err).
 			WithContext(r.Context()).
-			Error("failed to encode response body")
+			Error("Failed to encode response body")
 	}
 }
