@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"github.com/cerfical/muzik/internal/httpserv/api"
-	"github.com/cerfical/muzik/internal/httpserv/middleware"
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/model"
 )
@@ -19,17 +18,20 @@ type Server struct {
 	Addr            string
 	Log             *log.Logger
 	shutdownErrChan chan error
+	middleware      []Middleware
+}
+
+type Middleware func(http.Handler) http.Handler
+
+func (s *Server) Use(m Middleware) {
+	s.middleware = append(s.middleware, m)
 }
 
 func (s *Server) Run() error {
-	log := s.Log.WithContextKey(middleware.RequestID)
-	router := setupRouter(api.TrackHandler{
-		Store: s.TrackStore,
-		Log:   log,
-	})
-
-	h := middleware.LogRequest(log, router)
-	h = middleware.AddRequestID(h)
+	h := s.setupRouter()
+	for _, m := range s.middleware {
+		h = m(h)
+	}
 
 	serv := http.Server{
 		Addr:    s.Addr,
@@ -71,7 +73,12 @@ func (s *Server) Run() error {
 	return nil
 }
 
-func setupRouter(tracks api.TrackHandler) http.Handler {
+func (s *Server) setupRouter() http.Handler {
+	tracks := api.TrackHandler{
+		Store: s.TrackStore,
+		Log:   s.Log,
+	}
+
 	mux := http.NewServeMux()
 	routes := []struct {
 		path    string

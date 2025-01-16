@@ -5,12 +5,13 @@ import (
 
 	"github.com/cerfical/muzik/internal/args"
 	"github.com/cerfical/muzik/internal/httpserv"
+	"github.com/cerfical/muzik/internal/httpserv/middleware"
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/memstore"
 )
 
 func main() {
-	log := log.New()
+	log := log.New().WithContextKey(middleware.RequestID)
 	args := args.Parse(os.Args)
 
 	log = log.WithLevel(args.LogLevel)
@@ -19,6 +20,9 @@ func main() {
 		TrackStore: &memstore.TrackStore{},
 		Log:        log,
 	}
+
+	server.Use(middleware.LogRequest(log))
+	server.Use(middleware.AddRequestID)
 
 	log.WithFields("addr", server.Addr).
 		Info("Starting up the server")
