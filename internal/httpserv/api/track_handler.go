@@ -85,8 +85,8 @@ func (h *TrackHandler) writeResponse(w http.ResponseWriter, r *http.Request, sta
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(&resp); err != nil {
-		h.Log.WithError(err).
-			WithContext(r.Context()).
+		h.Log.WithContext(r.Context()).
+			WithError(err).
 			Error("Failed to encode response body")
 	}
 }

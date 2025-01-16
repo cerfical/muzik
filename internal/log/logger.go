@@ -50,7 +50,7 @@ func (l *Logger) WithContext(ctx context.Context) *Logger {
 	return &Logger{l.logger.With().Ctx(ctx).Logger()}
 }
 
-func (l *Logger) WithContextValue(key any) *Logger {
+func (l *Logger) WithContextKey(key any) *Logger {
 	f := func(e *zerolog.Event, _ zerolog.Level, _ string) {
 		if v := e.GetCtx().Value(key); v != nil {
 			e.Any(fmt.Sprintf("%v", key), v)

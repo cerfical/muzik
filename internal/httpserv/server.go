@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync/atomic"
 	"syscall"
 
 	"github.com/cerfical/muzik/internal/httpserv/api"
+	"github.com/cerfical/muzik/internal/httpserv/middleware"
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/model"
 )
@@ -24,9 +24,18 @@ func (s *Server) Run() {
 	s.Log.WithFields("addr", s.Addr).
 		Info("Server startup")
 
+	log := s.Log.WithContextKey(middleware.RequestID)
+	router := setupRouter(api.TrackHandler{
+		Store: s.TrackStore,
+		Log:   log,
+	})
+
+	h := middleware.LogRequest(log, router)
+	h = middleware.AddRequestID(h)
+
 	serv := http.Server{
 		Addr:    s.Addr,
-		Handler: s.setupRouter(),
+		Handler: h,
 	}
 
 	// Graceful shutdown
@@ -69,15 +78,8 @@ func (s *Server) Run() {
 	}
 }
 
-func (s *Server) setupRouter() http.Handler {
+func setupRouter(tracks api.TrackHandler) http.Handler {
 	mux := http.NewServeMux()
-
-	log := s.Log.WithContextValue(keyRequestID{})
-	tracks := api.TrackHandler{
-		Store: s.TrackStore,
-		Log:   log,
-	}
-
 	routes := []struct {
 		path    string
 		handler http.HandlerFunc
@@ -85,38 +87,15 @@ func (s *Server) setupRouter() http.Handler {
 		{"GET /api/tracks/{id}", tracks.Get},
 		{"GET /api/tracks/{$}", tracks.GetAll},
 		{"POST /api/tracks/{$}", tracks.Create},
-		{"GET /{$}", s.index},
+		{"GET /{$}", index},
 	}
 
 	for _, r := range routes {
 		mux.HandleFunc(r.path, r.handler)
 	}
-	return http.HandlerFunc(requestLogger(log, mux))
+	return mux
 }
 
-func requestLogger(l *log.Logger, next http.Handler) http.HandlerFunc {
-	var requestID atomic.Uint64
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := requestID.Add(1)
-		ctx := context.WithValue(r.Context(), keyRequestID{}, id)
-
-		l.WithContext(ctx).
-			WithFields(
-				"method", r.Method,
-				"path", r.URL.Path,
-			).
-			Info("Incoming request")
-		next.ServeHTTP(w, r.WithContext(ctx))
-	}
-}
-
-type keyRequestID struct{}
-
-func (keyRequestID) String() string {
-	return "request_id"
-}
-
-func (s *Server) index(w http.ResponseWriter, r *http.Request) {
+func index(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "static/index.html")
 }
