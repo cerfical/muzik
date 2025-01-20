@@ -10,7 +10,8 @@ type TrackInfo struct {
 }
 
 type TrackStore interface {
-	CreateTrack(info *TrackInfo) *Track
-	TrackByID(id int) (*Track, bool)
-	AllTracks() []*Track
+	CreateTrack(attrs *TrackInfo) (int, error)
+	TrackByID(id int) (*Track, error)
+	AllTracks() ([]*Track, error)
+	Close() error
 }

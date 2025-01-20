@@ -34,6 +34,20 @@ func badRequest() response {
 	}
 }
 
+func dataAccessError() response {
+	return &errorResponse{
+		Status: http.StatusInternalServerError,
+		Error:  "data access error",
+	}
+}
+
+func resourceCreationError() response {
+	return &errorResponse{
+		Status: http.StatusInternalServerError,
+		Error:  "resource creation error",
+	}
+}
+
 type response interface {
 	write(w http.ResponseWriter) error
 }

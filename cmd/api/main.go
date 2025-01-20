@@ -7,22 +7,15 @@ import (
 	"github.com/cerfical/muzik/internal/httpserv"
 	"github.com/cerfical/muzik/internal/httpserv/middleware"
 	"github.com/cerfical/muzik/internal/log"
-	"github.com/cerfical/muzik/internal/memstore"
+	"github.com/cerfical/muzik/internal/postgres"
 )
-
-type Config struct {
-	Log struct {
-		Level log.Level `mapstructure:"level"`
-	} `mapstructure:"log"`
-}
 
 func main() {
 	log := log.New().WithContextKey(middleware.RequestID)
 
 	config, err := config.Load(os.Args)
 	if err != nil {
-		log.WithError(err).
-			Fatal("error loading config file")
+		log.WithError(err).Fatal("Error loading config file")
 	}
 
 	log = log.WithLevel(config.Log.Level)
@@ -31,9 +24,15 @@ func main() {
 		"log.level", config.Log.Level,
 	).Info("Using config")
 
+	log.Info("Opening the database")
+	store, err := postgres.OpenTrackStore(&config.Storage)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to open the database")
+	}
+
 	server := httpserv.Server{
 		Addr:       config.Server.Addr,
-		TrackStore: &memstore.TrackStore{},
+		TrackStore: store,
 		Log:        log,
 	}
 
@@ -42,13 +41,16 @@ func main() {
 
 	log.Info("Starting up the server")
 	if err := server.Run(); err != nil {
-		log.WithError(err).
-			Fatal("Server terminated abnormally")
+		log.WithError(err).Fatal("Server terminated abnormally")
 	}
 
 	log.Info("Shutting down the server")
 	if err := server.Close(); err != nil {
-		log.WithError(err).
-			Fatal("Server shutdown failed")
+		log.WithError(err).Fatal("Server shutdown failed")
+	}
+
+	log.Info("Closing the database")
+	if err := store.Close(); err != nil {
+		log.WithError(err).Fatal("Failed to close the database")
 	}
 }

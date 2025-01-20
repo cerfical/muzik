@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -24,16 +25,26 @@ func (h *TrackHandler) getTrack(r *http.Request) response {
 		return trackNotFound()
 	}
 
-	track, ok := h.Store.TrackByID(id)
-	if !ok {
-		return trackNotFound()
+	track, err := h.Store.TrackByID(id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotFound) {
+			return trackNotFound()
+		}
+
+		h.serveError(r, err)
+		return dataAccessError()
 	}
 	return dataFound(track)
 }
 
 func (h *TrackHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	h.handleRequest(w, r, func(r *http.Request) response {
-		return dataFound(h.Store.AllTracks())
+		tracks, err := h.Store.AllTracks()
+		if err != nil {
+			h.serveError(r, err)
+			return dataAccessError()
+		}
+		return dataFound(tracks)
 	})
 }
 
@@ -46,7 +57,7 @@ func (h *TrackHandler) createTrack(r *http.Request) response {
 	dec.DisallowUnknownFields()
 
 	var req struct {
-		Data *model.TrackInfo `json:"data"`
+		Data model.TrackInfo `json:"data"`
 	}
 
 	if err := dec.Decode(&req); err != nil {
@@ -54,8 +65,14 @@ func (h *TrackHandler) createTrack(r *http.Request) response {
 		return badRequest()
 	}
 
-	track := h.Store.CreateTrack(req.Data)
-	trackURI := r.URL.JoinPath(strconv.Itoa(track.ID))
+	id, err := h.Store.CreateTrack(&req.Data)
+	if err != nil {
+		h.serveError(r, err)
+		return resourceCreationError()
+	}
+
+	trackURI := r.URL.JoinPath(strconv.Itoa(id))
+	track := model.Track{ID: id, Title: req.Data.Title}
 
 	return dataCreated(trackURI.String(), &track)
 }
