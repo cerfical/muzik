@@ -1,8 +1,8 @@
 package model
 
 type Track struct {
-	ID   int        `json:"id,string"`
-	Info *TrackInfo `json:"attributes"`
+	ID    int    `json:"id,string"`
+	Title string `json:"title"`
 }
 
 type TrackInfo struct {

@@ -11,13 +11,13 @@ type TrackStore struct {
 	dataMu sync.Mutex
 }
 
-func (s *TrackStore) CreateTrack(info *model.TrackInfo) *model.Track {
+func (s *TrackStore) CreateTrack(attrs *model.TrackInfo) *model.Track {
 	s.dataMu.Lock()
 	defer s.dataMu.Unlock()
 
 	t := &model.Track{
-		ID:   len(s.data),
-		Info: info,
+		ID:    len(s.data),
+		Title: attrs.Title,
 	}
 	s.data = append(s.data, t)
 	return t
