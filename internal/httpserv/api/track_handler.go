@@ -15,78 +15,59 @@ type TrackHandler struct {
 }
 
 func (h *TrackHandler) Get(w http.ResponseWriter, r *http.Request) {
-	trackID, err := strconv.Atoi(r.PathValue("id"))
+	h.handleRequest(w, r, h.getTrack)
+}
+
+func (h *TrackHandler) getTrack(r *http.Request) response {
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		h.writeError(w, r, http.StatusNotFound, "track not found")
-		return
+		return trackNotFound()
 	}
 
-	track, ok := h.Store.TrackByID(trackID)
+	track, ok := h.Store.TrackByID(id)
 	if !ok {
-		h.writeError(w, r, http.StatusNotFound, "track not found")
-		return
+		return trackNotFound()
 	}
-	h.writeTrack(w, r, http.StatusOK, track)
+	return dataFound(track)
 }
 
 func (h *TrackHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	h.writeTracks(w, r, http.StatusOK, h.Store.AllTracks())
+	h.handleRequest(w, r, func(r *http.Request) response {
+		return dataFound(h.Store.AllTracks())
+	})
 }
 
 func (h *TrackHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var trackInfo struct {
-		Data *model.TrackInfo `json:"data"`
-	}
+	h.handleRequest(w, r, h.createTrack)
+}
 
+func (h *TrackHandler) createTrack(r *http.Request) response {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	if err := dec.Decode(&trackInfo); err != nil {
-		h.writeError(w, r, http.StatusBadRequest, "failed to decode request body")
-		return
+	var req struct {
+		Data *model.TrackInfo `json:"data"`
 	}
 
-	track := h.Store.CreateTrack(trackInfo.Data)
+	if err := dec.Decode(&req); err != nil {
+		h.serveError(r, err)
+		return badRequest()
+	}
 
+	track := h.Store.CreateTrack(req.Data)
 	trackURI := r.URL.JoinPath(strconv.Itoa(track.ID))
-	w.Header().Set("Location", trackURI.String())
-	h.writeTrack(w, r, http.StatusCreated, track)
+
+	return dataCreated(trackURI.String(), &track)
 }
 
-func (h *TrackHandler) writeError(w http.ResponseWriter, r *http.Request, status int, msg string) {
-	resp := struct {
-		Errors []responseError `json:"errors"`
-	}{[]responseError{{strconv.Itoa(status), msg}}}
-
-	h.writeResponse(w, r, status, resp)
-}
-
-type responseError struct {
-	Status string `json:"status"`
-	Title  string `json:"title"`
-}
-
-func (h *TrackHandler) writeTracks(w http.ResponseWriter, r *http.Request, status int, data []*model.Track) {
-	resp := struct {
-		Data []*model.Track `json:"data"`
-	}{data}
-	h.writeResponse(w, r, status, resp)
-}
-
-func (h *TrackHandler) writeTrack(w http.ResponseWriter, r *http.Request, status int, data *model.Track) {
-	resp := struct {
-		Data *model.Track `json:"data"`
-	}{data}
-	h.writeResponse(w, r, status, resp)
-}
-
-func (h *TrackHandler) writeResponse(w http.ResponseWriter, r *http.Request, status int, resp any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-
-	if err := json.NewEncoder(w).Encode(&resp); err != nil {
-		h.Log.WithContext(r.Context()).
-			WithError(err).
-			Error("Failed to encode response body")
+func (h *TrackHandler) handleRequest(w http.ResponseWriter, r *http.Request, handler func(*http.Request) response) {
+	if err := handler(r).write(w); err != nil {
+		h.serveError(r, err)
 	}
+}
+
+func (h *TrackHandler) serveError(r *http.Request, err error) {
+	h.Log.WithContext(r.Context()).
+		WithError(err).
+		Error("Error serving the request")
 }
