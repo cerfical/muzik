@@ -21,6 +21,9 @@ func main() {
 	log = log.WithLevel(config.Log.Level)
 	log.WithFields(
 		"server.addr", config.Server.Addr,
+		"storage.addr", config.Storage.Addr,
+		"storage.user", config.Storage.User,
+		"storage.database", config.Storage.Database,
 		"log.level", config.Log.Level,
 	).Info("Using config")
 

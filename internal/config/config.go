@@ -16,18 +16,6 @@ func Load(args []string) (*Config, error) {
 	return readFrom(args[1])
 }
 
-type Config struct {
-	Server struct {
-		Addr string `mapstructure:"addr"`
-	} `mapstructure:"server"`
-
-	Storage postgres.Config `mapstructure:"storage"`
-
-	Log struct {
-		Level log.Level `mapstructure:"level"`
-	} `mapstructure:"log"`
-}
-
 func readFrom(configPath string) (*Config, error) {
 	v := viper.New()
 	v.SetConfigFile(configPath)
@@ -45,4 +33,16 @@ func readFrom(configPath string) (*Config, error) {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+type Config struct {
+	Server struct {
+		Addr string `mapstructure:"addr"`
+	} `mapstructure:"server"`
+
+	Storage postgres.Config `mapstructure:"storage"`
+
+	Log struct {
+		Level log.Level `mapstructure:"level"`
+	} `mapstructure:"log"`
 }
