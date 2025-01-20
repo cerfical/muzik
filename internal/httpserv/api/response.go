@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 )
 
 func dataFound(data any) response {
@@ -47,18 +46,16 @@ type errorResponse struct {
 
 func (r *errorResponse) write(w http.ResponseWriter) error {
 	resp := struct {
-		Errors []responseError `json:"errors"`
-	}{[]responseError{{
-		Status: strconv.Itoa(r.Status),
-		Title:  r.Error,
-	}}}
+		Error struct {
+			Status int    `json:"status,string"`
+			Title  string `json:"title"`
+		} `json:"error"`
+	}{}
+
+	resp.Error.Status = r.Status
+	resp.Error.Title = r.Error
 
 	return writeResponse(resp, r.Status, r.Header, w)
-}
-
-type responseError struct {
-	Status string `json:"status"`
-	Title  string `json:"title"`
 }
 
 type dataResponse struct {
