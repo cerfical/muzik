@@ -1,15 +1,13 @@
 package main
 
 import (
+	"net/http"
 	"os"
 
-	"github.com/cerfical/muzik/internal/api"
 	"github.com/cerfical/muzik/internal/config"
 	"github.com/cerfical/muzik/internal/httpserv"
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/middleware"
-	"github.com/cerfical/muzik/internal/model"
-	"github.com/cerfical/muzik/internal/postgres"
 )
 
 func main() {
@@ -20,7 +18,6 @@ func main() {
 type App struct {
 	config *config.Config
 	server *httpserv.Server
-	store  model.TrackStore
 	log    *log.Logger
 }
 
@@ -31,8 +28,7 @@ func NewApp() *App {
 	a.config = loadConfig(a.log)
 
 	a.log = a.log.WithLevel(a.config.Log.Level)
-	a.store = newStore(a.config, a.log)
-	a.server = newServer(a.config, a.store, a.log)
+	a.server = newServer(a.config, a.log)
 
 	return &a
 }
@@ -45,37 +41,22 @@ func loadConfig(l *log.Logger) *config.Config {
 	return c
 }
 
-func newStore(c *config.Config, l *log.Logger) model.TrackStore {
-	l.Info("Opening the database")
-
-	s, err := postgres.OpenTrackStore(&c.Storage)
-	if err != nil {
-		l.WithError(err).Fatal("Failed to open the database")
-	}
-	return s
-}
-
-func newServer(c *config.Config, s model.TrackStore, l *log.Logger) *httpserv.Server {
+func newServer(c *config.Config, l *log.Logger) *httpserv.Server {
 	serv := httpserv.Server{
 		Addr: c.Server.Addr,
 		Log:  l,
 	}
 
 	setupMiddleware(&serv, l)
-	setupRoutes(&serv, s, l)
+	setupRoutes(&serv)
 
 	return &serv
 }
 
-func setupRoutes(serv *httpserv.Server, s model.TrackStore, l *log.Logger) {
-	tracks := api.TrackHandler{
-		Store: s,
-		Log:   l,
-	}
-
-	serv.Route("GET /api/tracks/{id}", tracks.Get)
-	serv.Route("GET /api/tracks/{$}", tracks.GetAll)
-	serv.Route("POST /api/tracks/{$}", tracks.Create)
+func setupRoutes(serv *httpserv.Server) {
+	serv.Route("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/index.html")
+	})
 }
 
 func setupMiddleware(serv *httpserv.Server, l *log.Logger) {
@@ -87,9 +68,6 @@ func (a *App) Run() {
 	// Dump the app configuration being used
 	a.log.WithFields(
 		"server.addr", a.config.Server.Addr,
-		"storage.addr", a.config.Storage.Addr,
-		"storage.user", a.config.Storage.User,
-		"storage.database", a.config.Storage.Database,
 		"log.level", a.config.Log.Level,
 	).Info("Using config")
 
@@ -98,19 +76,7 @@ func (a *App) Run() {
 		a.log.WithError(err).Fatal("Server terminated abnormally")
 	}
 
-	a.cleanup()
-}
-
-func (a *App) cleanup() {
-	a.closeStore()
 	a.closeServer()
-}
-
-func (a *App) closeStore() {
-	a.log.Info("Closing the database")
-	if err := a.store.Close(); err != nil {
-		a.log.WithError(err).Fatal("Failed to close the database")
-	}
 }
 
 func (a *App) closeServer() {

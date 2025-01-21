@@ -8,23 +8,32 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cerfical/muzik/internal/httpserv/api"
 	"github.com/cerfical/muzik/internal/log"
-	"github.com/cerfical/muzik/internal/model"
 )
 
 type Server struct {
-	TrackStore      model.TrackStore
-	Addr            string
-	Log             *log.Logger
+	Addr string
+	Log  *log.Logger
+
 	shutdownErrChan chan error
-	middleware      []Middleware
+
+	middleware []Middleware
+	routes     []route
 }
 
 type Middleware func(http.Handler) http.Handler
 
+type route struct {
+	path    string
+	handler http.HandlerFunc
+}
+
 func (s *Server) Use(m Middleware) {
 	s.middleware = append(s.middleware, m)
+}
+
+func (s *Server) Route(path string, h http.HandlerFunc) {
+	s.routes = append(s.routes, route{path, h})
 }
 
 func (s *Server) Run() error {
@@ -74,23 +83,8 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) setupRouter() http.Handler {
-	tracks := api.TrackHandler{
-		Store: s.TrackStore,
-		Log:   s.Log,
-	}
-
 	mux := http.NewServeMux()
-	routes := []struct {
-		path    string
-		handler http.HandlerFunc
-	}{
-		{"GET /api/tracks/{id}", tracks.Get},
-		{"GET /api/tracks/{$}", tracks.GetAll},
-		{"POST /api/tracks/{$}", tracks.Create},
-		{"GET /{$}", index},
-	}
-
-	for _, r := range routes {
+	for _, r := range s.routes {
 		mux.HandleFunc(r.path, r.handler)
 	}
 	return mux
