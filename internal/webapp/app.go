@@ -1,10 +1,14 @@
 package webapp
 
 import (
+	"context"
+	"errors"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/cerfical/muzik/internal/config"
-	"github.com/cerfical/muzik/internal/httpserv"
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/middleware"
 )
@@ -15,7 +19,6 @@ func New(args []string) *App {
 	a.Log = log.New()
 	a.Config = loadConfig(args, a.Log)
 	a.Log = a.Log.WithLevel(a.Config.Log.Level)
-	a.Server = &httpserv.Server{Addr: a.Config.Server.Addr}
 
 	a.Use(middleware.LogRequest(a.Log))
 
@@ -32,7 +35,6 @@ func loadConfig(args []string, l *log.Logger) *config.Config {
 
 type App struct {
 	Config *config.Config
-	Server *httpserv.Server
 	Log    *log.Logger
 
 	middleware []Middleware
@@ -55,16 +57,37 @@ func (a *App) Route(path string, h http.HandlerFunc) {
 }
 
 func (a *App) Run() {
-	a.Log.WithFields("serv.addr", a.Server.Addr).Info("Starting up the server")
+	a.Log.WithFields("serv.addr", a.Config.Server.Addr).Info("Starting up the server")
 
-	a.Server.Handler = setupMiddleware(setupRouter(a.routes), a.middleware)
-	if err := a.Server.Run(); err != nil {
-		a.Log.WithError(err).Fatal("Server terminated abnormally")
+	serv := http.Server{
+		Addr:    a.Config.Server.Addr,
+		Handler: setupMiddleware(setupRouter(a.routes), a.middleware),
 	}
 
+	// Graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err := serv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			a.Log.WithError(err).Error("Server terminated abnormally")
+		}
+
+		// Make sure the outer goroutine unblocks in case the server was terminated before any signals arrived
+		signal.Stop(sigChan)
+		close(sigChan)
+	}()
+
+	// If the server was terminated due to some other reason, return immediately
+	if _, ok := <-sigChan; !ok {
+		return
+	}
 	a.Log.Info("Shutting down the server")
-	if err := a.Server.Close(); err != nil {
-		a.Log.WithError(err).Fatal("Server shutdown failed")
+
+	// Try to shutdown the server cleanly and if that fails, close the server
+	if err := serv.Shutdown(context.Background()); err != nil {
+		a.Log.WithError(err).Error("Server shutdown failed")
+		serv.Close()
 	}
 }
 
