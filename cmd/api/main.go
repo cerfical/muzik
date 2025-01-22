@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/cerfical/muzik/internal/api"
+	"github.com/cerfical/muzik/internal/middleware"
 	"github.com/cerfical/muzik/internal/postgres"
 	"github.com/cerfical/muzik/internal/webapp"
 )
@@ -36,5 +37,6 @@ func main() {
 	app.Route("GET /api/tracks/{$}", tracks.GetAll)
 	app.Route("POST /api/tracks/{$}", tracks.Create)
 
+	app.Use(middleware.HasContentType("application/json"))
 	app.Run()
 }
