@@ -99,7 +99,9 @@ func (s *TrackStore) AllTracks() ([]*model.Track, error) {
 		return nil, err
 	}
 
-	var tracks []*model.Track
+	// Return the empty collection as a slice of size 0, not as nil
+	tracks := make([]*model.Track, 0)
+
 	for rows.Next() {
 		var track model.Track
 		err = rows.Scan(&track.ID, &track.Title)
