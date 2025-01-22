@@ -20,8 +20,6 @@ func New(args []string) *App {
 	a.Config = loadConfig(args, a.Log)
 	a.Log = a.Log.WithLevel(a.Config.Log.Level)
 
-	a.Use(middleware.LogRequest(a.Log))
-
 	return &a
 }
 
@@ -59,6 +57,8 @@ func (a *App) Route(path string, h http.HandlerFunc) {
 func (a *App) Run() {
 	a.Log.WithFields("serv.addr", a.Config.Server.Addr).Info("Starting up the server")
 
+	// Request logging is the top-level middleware, so that all requests are logged
+	a.Use(middleware.LogRequest(a.Log))
 	serv := http.Server{
 		Addr:    a.Config.Server.Addr,
 		Handler: setupMiddleware(setupRouter(a.routes), a.middleware),
