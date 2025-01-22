@@ -2,7 +2,7 @@ package log
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -19,6 +19,14 @@ func New() *Logger {
 			Timestamp().
 			Logger(),
 	}
+}
+
+func FromRequest(r *http.Request) *Logger {
+	return FromContext(r.Context())
+}
+
+func FromContext(ctx context.Context) *Logger {
+	return &Logger{*zerolog.Ctx(ctx)}
 }
 
 type Logger struct {
@@ -46,17 +54,8 @@ func (l *Logger) WithLevel(lvl Level) *Logger {
 	return &Logger{l.logger.Level(zerolog.Level(lvl))}
 }
 
-func (l *Logger) WithContext(ctx context.Context) *Logger {
-	return &Logger{l.logger.With().Ctx(ctx).Logger()}
-}
-
-func (l *Logger) WithContextKey(key any) *Logger {
-	f := func(e *zerolog.Event, _ zerolog.Level, _ string) {
-		if v := e.GetCtx().Value(key); v != nil {
-			e.Any(fmt.Sprintf("%v", key), v)
-		}
-	}
-	return &Logger{l.logger.Hook(zerolog.HookFunc(f))}
+func (l *Logger) WithContext(ctx context.Context) context.Context {
+	return l.logger.WithContext(ctx)
 }
 
 func (l *Logger) WithFields(fields ...any) *Logger {

@@ -12,7 +12,6 @@ import (
 
 type TrackHandler struct {
 	Store model.TrackStore
-	Log   *log.Logger
 }
 
 func (h *TrackHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +83,6 @@ func (h *TrackHandler) handleRequest(w http.ResponseWriter, r *http.Request, han
 }
 
 func (h *TrackHandler) serveError(r *http.Request, err error) {
-	h.Log.WithContext(r.Context()).
-		WithError(err).
-		Error("Error serving the request")
+	log.FromRequest(r).
+		WithError(err).Error("Error serving the request")
 }

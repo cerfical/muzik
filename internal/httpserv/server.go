@@ -15,8 +15,6 @@ type Server struct {
 	Addr string
 	Log  *log.Logger
 
-	shutdownErrChan chan error
-
 	middleware []Middleware
 	routes     []route
 }
@@ -36,7 +34,9 @@ func (s *Server) Route(path string, h http.HandlerFunc) {
 	s.routes = append(s.routes, route{path, h})
 }
 
-func (s *Server) Run() error {
+func (s *Server) Run() {
+	s.Log.WithFields("serv.addr", s.Addr).Info("Starting up the server")
+
 	h := s.setupRouter()
 	for _, m := range s.middleware {
 		h = m(h)
@@ -48,7 +48,7 @@ func (s *Server) Run() error {
 	}
 
 	// Graceful shutdown
-	s.shutdownErrChan = make(chan error)
+	shutdownErrChan := make(chan error)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
@@ -61,7 +61,7 @@ func (s *Server) Run() error {
 	go func() {
 		var err error
 		defer func() {
-			s.shutdownErrChan <- err
+			shutdownErrChan <- err
 		}()
 
 		// If the server was terminated due to some other error, return immediately
@@ -77,9 +77,13 @@ func (s *Server) Run() error {
 	}()
 
 	if err := serv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-		return err
+		s.Log.WithError(err).Fatal("Server terminated abnormally")
 	}
-	return nil
+
+	s.Log.Info("Shutting down the server")
+	if err := <-shutdownErrChan; err != nil {
+		s.Log.WithError(err).Fatal("Server shutdown failed")
+	}
 }
 
 func (s *Server) setupRouter() http.Handler {
@@ -88,13 +92,4 @@ func (s *Server) setupRouter() http.Handler {
 		mux.HandleFunc(r.path, r.handler)
 	}
 	return mux
-}
-
-func index(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "static/index.html")
-}
-
-func (s *Server) Close() error {
-	defer close(s.shutdownErrChan)
-	return <-s.shutdownErrChan
 }
