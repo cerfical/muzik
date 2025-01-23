@@ -1,0 +1,6 @@
+server:
+  addr: :80
+
+storage:
+  database: postgres
+  user: postgres
