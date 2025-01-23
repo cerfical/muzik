@@ -1,0 +1,63 @@
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:alpine
+    restart: always
+    secrets:
+      - db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      start_period: 10s
+      start_interval: 1s
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+
+  # Backend API server
+  api:
+    restart: always
+    build:
+      context: .
+      dockerfile: cmd/api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    command: /app/config.yaml
+    configs:
+      - source: server_config
+        target: /app/config.yaml
+
+  # Frontend HTTP web server
+  web:
+    restart: always
+    build:
+      context: .
+      dockerfile: cmd/web/Dockerfile
+    depends_on:
+      - api
+    command: /app/config.yaml
+    configs:
+      - source: server_config
+        target: /app/config.yaml
+
+  # Use nginx as a reverse proxy
+  nginx:
+    image: nginx:alpine
+    restart: always
+    depends_on:
+      - web
+      - api
+    ports:
+      - "127.0.0.1:8080:80"
+    configs:
+      - source: nginx_config
+        target: /etc/nginx/nginx.conf
+
+secrets:
+  db_password:
+    environment: DATABASE_PASSWORD
+
+configs:
+  server_config:
+    file: configs/server.yaml
+  nginx_config:
+    file: configs/nginx.conf

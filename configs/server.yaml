@@ -2,5 +2,6 @@ server:
   addr: :80
 
 storage:
+  addr: db:5432
   database: postgres
   user: postgres
