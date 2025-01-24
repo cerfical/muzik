@@ -36,7 +36,10 @@ func ParseData(r io.Reader, data any) error {
 func describeError(err error) string {
 	// Check for type errors
 	if e := (&json.UnmarshalTypeError{}); errors.As(err, &e) {
-		return fmt.Sprintf("request body contains an invalid value for the field %s at position %d", e.Field, e.Offset)
+		if e.Field != "" {
+			return fmt.Sprintf("request body contains an invalid value for the field %s", e.Field)
+		}
+		return "request body contains an invalid value for the root element"
 	}
 
 	// Check for generic syntax errors
