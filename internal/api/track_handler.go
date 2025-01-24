@@ -1,12 +1,11 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/cerfical/muzik/internal/log"
+	"github.com/cerfical/muzik/internal/api/json"
 	"github.com/cerfical/muzik/internal/model"
 )
 
@@ -15,74 +14,51 @@ type TrackHandler struct {
 }
 
 func (h *TrackHandler) Get(w http.ResponseWriter, r *http.Request) {
-	h.handleRequest(w, r, h.getTrack)
-}
-
-func (h *TrackHandler) getTrack(r *http.Request) response {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		return trackNotFound()
+		resourceNotExist(w, r)
+		return
 	}
 
 	track, err := h.Store.TrackByID(id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
-			return trackNotFound()
+			resourceNotExist(w, r)
+			return
 		}
 
-		h.serveError(r, err)
-		return dataAccessError()
+		resourceReadError(w, r, err)
+		return
 	}
-	return dataFound(track)
+
+	serveResource(w, r, track)
 }
 
 func (h *TrackHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	h.handleRequest(w, r, func(r *http.Request) response {
-		tracks, err := h.Store.AllTracks()
-		if err != nil {
-			h.serveError(r, err)
-			return dataAccessError()
-		}
-		return dataFound(tracks)
-	})
+	tracks, err := h.Store.AllTracks()
+	if err != nil {
+		resourceReadError(w, r, err)
+		return
+	}
+
+	serveResource(w, r, tracks)
 }
 
 func (h *TrackHandler) Create(w http.ResponseWriter, r *http.Request) {
-	h.handleRequest(w, r, h.createTrack)
-}
-
-func (h *TrackHandler) createTrack(r *http.Request) response {
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-
-	var req struct {
-		Data model.TrackInfo `json:"data"`
+	var attrs model.TrackInfo
+	if err := json.Parse(r.Body, &attrs); err != nil {
+		badRequest(w, r, "failed to parse the request body")
+		return
 	}
 
-	if err := dec.Decode(&req); err != nil {
-		h.serveError(r, err)
-		return badRequest()
-	}
-
-	id, err := h.Store.CreateTrack(&req.Data)
+	id, err := h.Store.CreateTrack(&attrs)
 	if err != nil {
-		h.serveError(r, err)
-		return resourceCreationError()
+		resourceCreationError(w, r, err)
+		return
 	}
 
 	trackURI := r.URL.JoinPath(strconv.Itoa(id))
-	track := model.Track{ID: id, Title: req.Data.Title}
+	track := model.Track{ID: id, Title: attrs.Title}
 
-	return dataCreated(trackURI.String(), &track)
-}
-
-func (h *TrackHandler) handleRequest(w http.ResponseWriter, r *http.Request, handler func(*http.Request) response) {
-	if err := handler(r).write(w); err != nil {
-		h.serveError(r, err)
-	}
-}
-
-func (h *TrackHandler) serveError(r *http.Request, err error) {
-	log.FromRequest(r).
-		WithError(err).Error("Error serving the request")
+	resourceCreated(w, r, trackURI.String(), &track)
 }
