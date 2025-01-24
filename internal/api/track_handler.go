@@ -14,51 +14,59 @@ type TrackHandler struct {
 }
 
 func (h *TrackHandler) Get(w http.ResponseWriter, r *http.Request) {
+	responser := json.NewResponser(w, r)
+
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		resourceNotExist(w, r)
+		responser.NotFound()
 		return
 	}
 
 	track, err := h.Store.TrackByID(id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
-			resourceNotExist(w, r)
+			responser.NotFound()
 			return
 		}
 
-		resourceReadError(w, r, err)
+		responser.StorageReadError(err)
 		return
 	}
 
-	serveResource(w, r, track)
+	responser.ServeData(track)
 }
 
 func (h *TrackHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+	responser := json.NewResponser(w, r)
+
 	tracks, err := h.Store.AllTracks()
 	if err != nil {
-		resourceReadError(w, r, err)
+		responser.StorageReadError(err)
 		return
 	}
 
-	serveResource(w, r, tracks)
+	responser.ServeData(tracks)
 }
 
 func (h *TrackHandler) Create(w http.ResponseWriter, r *http.Request) {
+	responser := json.NewResponser(w, r)
+
 	var attrs model.TrackInfo
-	if err := json.Parse(r.Body, &attrs); err != nil {
-		badRequest(w, r, "failed to parse the request body")
+	if err := json.ParseData(r.Body, &attrs); err != nil {
+		if parseErr := (*json.ParseError)(nil); errors.As(err, &parseErr) {
+			responser.MalformedRequest(parseErr.Error())
+		} else {
+			responser.RequestParseError(err)
+		}
 		return
 	}
 
 	id, err := h.Store.CreateTrack(&attrs)
 	if err != nil {
-		resourceCreationError(w, r, err)
+		responser.StorageWriteError(err)
 		return
 	}
 
-	trackURI := r.URL.JoinPath(strconv.Itoa(id))
 	track := model.Track{ID: id, Title: attrs.Title}
-
-	resourceCreated(w, r, trackURI.String(), &track)
+	responser.Created(id, &track)
 }
