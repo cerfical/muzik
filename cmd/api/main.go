@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/cerfical/muzik/internal/api"
+	"github.com/cerfical/muzik/internal/handlers"
 	"github.com/cerfical/muzik/internal/middleware"
 	"github.com/cerfical/muzik/internal/postgres"
 	"github.com/cerfical/muzik/internal/webapp"
@@ -32,7 +32,7 @@ func main() {
 	}()
 
 	// Setup routes
-	tracks := api.TrackHandler{Store: store}
+	tracks := handlers.Tracks{Store: store}
 	app.Route("GET /api/tracks/{id}", tracks.Get)
 	app.Route("GET /api/tracks/{$}", tracks.GetAll)
 	app.Route("POST /api/tracks/{$}", tracks.Create)

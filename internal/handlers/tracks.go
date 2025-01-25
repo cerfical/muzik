@@ -1,19 +1,19 @@
-package api
+package handlers
 
 import (
 	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/cerfical/muzik/internal/api/json"
+	"github.com/cerfical/muzik/internal/handlers/json"
 	"github.com/cerfical/muzik/internal/model"
 )
 
-type TrackHandler struct {
+type Tracks struct {
 	Store model.TrackStore
 }
 
-func (h *TrackHandler) Get(w http.ResponseWriter, r *http.Request) {
+func (h *Tracks) Get(w http.ResponseWriter, r *http.Request) {
 	responser := json.NewResponser(w, r)
 
 	id, err := strconv.Atoi(r.PathValue("id"))
@@ -36,7 +36,7 @@ func (h *TrackHandler) Get(w http.ResponseWriter, r *http.Request) {
 	responser.ServeData(track)
 }
 
-func (h *TrackHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Tracks) GetAll(w http.ResponseWriter, r *http.Request) {
 	responser := json.NewResponser(w, r)
 
 	tracks, err := h.Store.AllTracks()
@@ -48,7 +48,7 @@ func (h *TrackHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	responser.ServeData(tracks)
 }
 
-func (h *TrackHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *Tracks) Create(w http.ResponseWriter, r *http.Request) {
 	responser := json.NewResponser(w, r)
 
 	var attrs model.TrackInfo
