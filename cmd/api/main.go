@@ -13,9 +13,9 @@ func main() {
 	app := webapp.New(os.Args)
 
 	app.Log.WithFields(
-		"stor.addr", app.Config.Storage.Addr,
-		"stor.user", app.Config.Storage.User,
-		"stor.db", app.Config.Storage.Database,
+		"addr", app.Config.Storage.Addr,
+		"user", app.Config.Storage.User,
+		"db_name", app.Config.Storage.Database,
 	).Info("Opening the database")
 
 	// Database configuration

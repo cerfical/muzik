@@ -54,7 +54,7 @@ func (a *App) Route(path string, h http.HandlerFunc) {
 }
 
 func (a *App) Run() {
-	a.Log.WithFields("serv.addr", a.Config.Server.Addr).Info("Starting up the server")
+	a.Log.WithFields("addr", a.Config.Server.Addr).Info("Starting up the server")
 
 	serv := http.Server{
 		Addr:    a.Config.Server.Addr,
