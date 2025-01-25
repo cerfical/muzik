@@ -21,6 +21,11 @@ func New() *Logger {
 	}
 }
 
+func init() {
+	// Free the "time" field name for request timing
+	zerolog.TimestampFieldName = "timestamp"
+}
+
 func FromRequest(r *http.Request) *Logger {
 	return FromContext(r.Context())
 }

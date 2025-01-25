@@ -10,7 +10,6 @@ import (
 
 	"github.com/cerfical/muzik/internal/config"
 	"github.com/cerfical/muzik/internal/log"
-	"github.com/cerfical/muzik/internal/middleware"
 )
 
 func New(args []string) *App {
@@ -57,8 +56,6 @@ func (a *App) Route(path string, h http.HandlerFunc) {
 func (a *App) Run() {
 	a.Log.WithFields("serv.addr", a.Config.Server.Addr).Info("Starting up the server")
 
-	// Request logging is the top-level middleware, so that all requests are logged
-	a.Use(middleware.LogRequest(a.Log))
 	serv := http.Server{
 		Addr:    a.Config.Server.Addr,
 		Handler: setupMiddleware(setupRouter(a.routes), a.middleware),
