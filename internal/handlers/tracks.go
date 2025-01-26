@@ -51,8 +51,8 @@ func (h *Tracks) GetAll(w http.ResponseWriter, r *http.Request) {
 func (h *Tracks) Create(w http.ResponseWriter, r *http.Request) {
 	responser := json.NewResponser(w, r)
 
-	var attrs model.TrackInfo
-	if err := json.ParseData(r.Body, &attrs); err != nil {
+	var track model.Track
+	if err := json.ParseData(r.Body, &track); err != nil {
 		if parseErr := (*json.ParseError)(nil); errors.As(err, &parseErr) {
 			responser.MalformedRequest(parseErr.Error())
 		} else {
@@ -61,12 +61,10 @@ func (h *Tracks) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.Store.CreateTrack(&attrs)
-	if err != nil {
+	if err := h.Store.CreateTrack(&track); err != nil {
 		responser.StorageWriteError(err)
 		return
 	}
 
-	track := model.Track{ID: id, Title: attrs.Title}
-	responser.Created(id, &track)
+	responser.Created(track.ID, &track)
 }

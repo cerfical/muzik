@@ -70,14 +70,9 @@ type TrackStore struct {
 	db *sql.DB
 }
 
-func (s *TrackStore) CreateTrack(attrs *model.TrackInfo) (int, error) {
-	row := s.db.QueryRow("INSERT INTO tracks(title) VALUES($1) RETURNING id", attrs.Title)
-
-	var id int
-	if err := row.Scan(&id); err != nil {
-		return 0, err
-	}
-	return id, nil
+func (s *TrackStore) CreateTrack(track *model.Track) error {
+	row := s.db.QueryRow("INSERT INTO tracks(title) VALUES($1) RETURNING id", track.Title)
+	return row.Scan(&track.ID)
 }
 
 func (s *TrackStore) TrackByID(id int) (*model.Track, error) {
@@ -93,14 +88,14 @@ func (s *TrackStore) TrackByID(id int) (*model.Track, error) {
 	return &track, nil
 }
 
-func (s *TrackStore) AllTracks() ([]*model.Track, error) {
+func (s *TrackStore) AllTracks() ([]model.Track, error) {
 	rows, err := s.db.Query("SELECT id, title FROM tracks")
 	if err != nil {
 		return nil, err
 	}
 
 	// Return the empty collection as a slice of size 0, not as nil
-	tracks := make([]*model.Track, 0)
+	tracks := make([]model.Track, 0)
 
 	for rows.Next() {
 		var track model.Track
@@ -108,7 +103,7 @@ func (s *TrackStore) AllTracks() ([]*model.Track, error) {
 		if err != nil {
 			break
 		}
-		tracks = append(tracks, &track)
+		tracks = append(tracks, track)
 	}
 
 	// Check for close errors
