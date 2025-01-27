@@ -1,8 +1,6 @@
 package log
 
 import (
-	"context"
-	"net/http"
 	"os"
 	"time"
 
@@ -24,14 +22,6 @@ func New() *Logger {
 func init() {
 	// Free the "time" field name for request timing
 	zerolog.TimestampFieldName = "timestamp"
-}
-
-func FromRequest(r *http.Request) *Logger {
-	return FromContext(r.Context())
-}
-
-func FromContext(ctx context.Context) *Logger {
-	return &Logger{*zerolog.Ctx(ctx)}
 }
 
 type Logger struct {
@@ -57,10 +47,6 @@ func (l *Logger) log(lvl Level, msg string) {
 
 func (l *Logger) WithLevel(lvl Level) *Logger {
 	return &Logger{l.logger.Level(zerolog.Level(lvl))}
-}
-
-func (l *Logger) WithContext(ctx context.Context) context.Context {
-	return l.logger.WithContext(ctx)
 }
 
 func (l *Logger) WithFields(fields ...any) *Logger {

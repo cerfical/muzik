@@ -6,15 +6,17 @@ import (
 	"strconv"
 
 	"github.com/cerfical/muzik/internal/handlers/json"
+	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/model"
 )
 
 type Tracks struct {
 	Store model.TrackStore
+	Log   *log.Logger
 }
 
 func (h *Tracks) Get(w http.ResponseWriter, r *http.Request) {
-	responser := json.NewResponser(w, r)
+	responser := json.NewResponser(w, r, h.Log)
 
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
@@ -37,7 +39,7 @@ func (h *Tracks) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Tracks) GetAll(w http.ResponseWriter, r *http.Request) {
-	responser := json.NewResponser(w, r)
+	responser := json.NewResponser(w, r, h.Log)
 
 	tracks, err := h.Store.AllTracks()
 	if err != nil {
@@ -49,7 +51,7 @@ func (h *Tracks) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Tracks) Create(w http.ResponseWriter, r *http.Request) {
-	responser := json.NewResponser(w, r)
+	responser := json.NewResponser(w, r, h.Log)
 
 	var track model.Track
 	if err := json.ParseData(r.Body, &track); err != nil {

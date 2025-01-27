@@ -8,14 +8,15 @@ import (
 	"github.com/cerfical/muzik/internal/log"
 )
 
-func NewResponser(w http.ResponseWriter, r *http.Request) *Responser {
-	return &Responser{w, r}
+func NewResponser(w http.ResponseWriter, r *http.Request, log *log.Logger) *Responser {
+	return &Responser{w, r, log}
 }
 
 // Responser provides a convenient interface for writing API responses.
 type Responser struct {
-	rw  http.ResponseWriter
-	req *http.Request
+	http.ResponseWriter
+	request *http.Request
+	log     *log.Logger
 }
 
 // ServeData writes resource data to the client.
@@ -25,9 +26,9 @@ func (r *Responser) ServeData(data any) {
 
 // Created reports a successful resource creation.
 func (r *Responser) Created(id int, data any) {
-	resourceLocation := r.req.URL.JoinPath(strconv.Itoa(id))
+	resourceLocation := r.request.URL.JoinPath(strconv.Itoa(id))
 
-	r.rw.Header().Set("Location", resourceLocation.String())
+	r.Header().Set("Location", resourceLocation.String())
 	r.serveData(data, http.StatusCreated)
 }
 
@@ -93,15 +94,16 @@ func (r *Responser) error(title, detail string, code int) {
 }
 
 func (r *Responser) writeResponse(response any, status int) {
-	r.rw.Header().Set("Content-Type", "application/json")
-	r.rw.WriteHeader(status)
+	r.Header().Set("Content-Type", "application/json")
+	r.WriteHeader(status)
 
-	if err := json.NewEncoder(r.rw).Encode(response); err != nil {
+	if err := json.NewEncoder(r).Encode(response); err != nil {
 		r.logError("JSON encoding error", err)
 	}
 }
 
 func (r *Responser) logError(msg string, err error) {
-	log.FromRequest(r.req).
-		WithError(err).Error(msg)
+	if r.log != nil {
+		r.log.WithError(err).Error(msg)
+	}
 }
