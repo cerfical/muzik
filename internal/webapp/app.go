@@ -1,6 +1,8 @@
 package webapp
 
 import (
+	stdlog "log"
+
 	"context"
 	"errors"
 	"net/http"
@@ -57,8 +59,9 @@ func (a *App) Run() {
 	a.Log.WithFields("addr", a.Config.Server.Addr).Info("Starting up the server")
 
 	serv := http.Server{
-		Addr:    a.Config.Server.Addr,
-		Handler: setupMiddleware(setupRouter(a.routes), a.middleware),
+		Addr:     a.Config.Server.Addr,
+		Handler:  setupMiddleware(setupRouter(a.routes), a.middleware),
+		ErrorLog: stdlog.New(&httpErrorLog{a.Log}, "", 0),
 	}
 
 	// Graceful shutdown
@@ -86,6 +89,22 @@ func (a *App) Run() {
 		a.Log.WithError(err).Error("Server shutdown failed")
 		serv.Close()
 	}
+}
+
+type httpErrorLog struct {
+	*log.Logger
+}
+
+func (w *httpErrorLog) Write(p []byte) (int, error) {
+	// Trim carriage return produced by stdlog
+	n := len(p)
+	if n > 0 && p[n-1] == '\n' {
+		p = p[0 : n-1]
+		n--
+	}
+
+	w.WithError(errors.New(string(p))).Error("HTTP serve error")
+	return n, nil
 }
 
 func setupRouter(routes []route) http.Handler {
