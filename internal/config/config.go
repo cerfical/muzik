@@ -10,16 +10,17 @@ import (
 )
 
 func Load(args []string) (*Config, error) {
-	if len(args) != 2 {
-		return nil, errors.New("expected a config path as the only command line argument")
+	v := viper.New()
+	if len(args) > 1 {
+		if len(args) != 2 {
+			return nil, errors.New("expected a config path as the only command line argument")
+		}
+		v.SetConfigFile(args[1])
 	}
-	return readFrom(args[1])
+	return load(v)
 }
 
-func readFrom(configPath string) (*Config, error) {
-	v := viper.New()
-	v.SetConfigFile(configPath)
-
+func load(v *viper.Viper) (*Config, error) {
 	// Set up automatic configuration loading from environment variables of the same name
 	// Build tag viper_bind_struct is required to properly unmarshal into a struct
 	// TODO: https://github.com/spf13/viper/issues/1797
@@ -28,14 +29,16 @@ func readFrom(configPath string) (*Config, error) {
 	v.AutomaticEnv()
 
 	if err := v.ReadInConfig(); err != nil {
-		return nil, err
+		// Make the configuration file optional
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, err
+		}
 	}
 
-	// Apply defaults
-	var cfg Config
-	cfg.Log.Level = log.LevelInfo
-	cfg.Server.Addr = "localhost:80"
+	v.SetDefault("log.level", log.LevelInfo)
+	v.SetDefault("server.addr", "localhost:8080")
 
+	var cfg Config
 	if err := v.Unmarshal(&cfg, viper.DecodeHook(mapstructure.TextUnmarshallerHookFunc())); err != nil {
 		return nil, err
 	}
@@ -46,9 +49,7 @@ type Config struct {
 	Server struct {
 		Addr string
 	}
-
-	DB DB
-
+	DB  DB
 	Log struct {
 		Level log.Level
 	}

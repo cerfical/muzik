@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"cmp"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -40,15 +41,15 @@ func makeConnString(cfg *config.DB) (string, error) {
 		return "", err
 	}
 
-	// Use slice rather than map for deterministic key order
+	// Set up defaults typically used by Postgres
 	c := []struct {
 		key, val string
 	}{
-		{"host", host},
-		{"port", port},
-		{"user", cfg.User},
+		{"host", cmp.Or(host, "localhost")},
+		{"port", cmp.Or(port, "5432")},
+		{"user", cmp.Or(cfg.User, "postgres")},
 		{"password", cfg.Password},
-		{"database", cfg.Name},
+		{"database", cmp.Or(cfg.Name, "postgres")},
 		{"sslmode", "disable"},
 	}
 

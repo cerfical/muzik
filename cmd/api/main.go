@@ -15,7 +15,7 @@ func main() {
 	app.Log.WithFields(
 		"addr", app.Config.DB.Addr,
 		"user", app.Config.DB.User,
-		"db_name", app.Config.DB.Name,
+		"name", app.Config.DB.Name,
 	).Info("Opening the database")
 
 	// Database configuration
