@@ -44,12 +44,12 @@ func readFrom(configPath string) (*Config, error) {
 
 type Config struct {
 	Server struct {
-		Addr string `mapstructure:"addr"`
-	} `mapstructure:"server"`
+		Addr string
+	}
 
-	DB DB `mapstructure:"db"`
+	DB DB
 
 	Log struct {
-		Level log.Level `mapstructure:"level"`
-	} `mapstructure:"log"`
+		Level log.Level
+	}
 }
