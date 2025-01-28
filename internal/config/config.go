@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/postgres"
@@ -19,6 +20,13 @@ func Load(args []string) (*Config, error) {
 func readFrom(configPath string) (*Config, error) {
 	v := viper.New()
 	v.SetConfigFile(configPath)
+
+	// Set up automatic configuration loading from environment variables of the same name
+	// Build tag viper_bind_struct is required to properly unmarshal into a struct
+	// TODO: https://github.com/spf13/viper/issues/1797
+	v.SetEnvPrefix("muzik")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, err
