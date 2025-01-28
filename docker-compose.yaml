@@ -3,14 +3,18 @@ services:
   db:
     image: postgres:alpine
     restart: always
-    secrets:
-      - db_password
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${MUZIK_DB_USER:-postgres} -d ${MUZIK_DB_NAME:-postgres}",
+        ]
       start_period: 10s
       start_interval: 1s
     environment:
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: ${MUZIK_DB_NAME:-postgres}
+      POSTGRES_USER: ${MUZIK_DB_USER:-postgres}
+      POSTGRES_PASSWORD: $MUZIK_DB_PASSWORD
 
   # Backend API server
   api:
@@ -18,13 +22,14 @@ services:
     build:
       context: .
       dockerfile: cmd/api/Dockerfile
+    environment:
+      - "MUZIK_DB_ADDR=db:5432"
+      - MUZIK_DB_NAME
+      - MUZIK_DB_USER
+      - MUZIK_DB_PASSWORD
     depends_on:
       db:
         condition: service_healthy
-    command: /app/config.yaml
-    configs:
-      - source: server_config
-        target: /app/config.yaml
 
   # Frontend HTTP web server
   web:
@@ -34,10 +39,6 @@ services:
       dockerfile: cmd/web/Dockerfile
     depends_on:
       - api
-    command: /app/config.yaml
-    configs:
-      - source: server_config
-        target: /app/config.yaml
 
   # Use nginx as a reverse proxy
   nginx:
@@ -52,12 +53,6 @@ services:
       - source: nginx_config
         target: /etc/nginx/nginx.conf
 
-secrets:
-  db_password:
-    environment: DATABASE_PASSWORD
-
 configs:
-  server_config:
-    file: configs/server.yaml
   nginx_config:
     file: configs/nginx.conf
