@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/cerfical/muzik/internal/config"
 	"github.com/cerfical/muzik/internal/model"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func OpenTrackStore(cfg *Config) (model.TrackStore, error) {
+func OpenTrackStore(cfg *config.DB) (model.TrackStore, error) {
 	connStr, err := makeConnString(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
@@ -33,7 +34,7 @@ func OpenTrackStore(cfg *Config) (model.TrackStore, error) {
 	return &TrackStore{db}, nil
 }
 
-func makeConnString(cfg *Config) (string, error) {
+func makeConnString(cfg *config.DB) (string, error) {
 	host, port, err := net.SplitHostPort(cfg.Addr)
 	if cfg.Addr != "" && err != nil {
 		return "", err
@@ -47,7 +48,7 @@ func makeConnString(cfg *Config) (string, error) {
 		{"port", port},
 		{"user", cfg.User},
 		{"password", cfg.Password},
-		{"database", cfg.Database},
+		{"database", cfg.Name},
 		{"sslmode", "disable"},
 	}
 

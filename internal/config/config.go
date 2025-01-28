@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/cerfical/muzik/internal/log"
-	"github.com/cerfical/muzik/internal/postgres"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 )
@@ -48,7 +47,7 @@ type Config struct {
 		Addr string `mapstructure:"addr"`
 	} `mapstructure:"server"`
 
-	Storage postgres.Config `mapstructure:"storage"`
+	DB DB `mapstructure:"db"`
 
 	Log struct {
 		Level log.Level `mapstructure:"level"`

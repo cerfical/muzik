@@ -1,8 +1,8 @@
-package postgres
+package config
 
-type Config struct {
+type DB struct {
 	Addr     string `mapstructure:"addr"`
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
-	Database string `mapstructure:"database"`
+	Name     string `mapstructure:"name"`
 }

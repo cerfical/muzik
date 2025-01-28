@@ -13,13 +13,13 @@ func main() {
 	app := webapp.New(os.Args)
 
 	app.Log.WithFields(
-		"addr", app.Config.Storage.Addr,
-		"user", app.Config.Storage.User,
-		"db_name", app.Config.Storage.Database,
+		"addr", app.Config.DB.Addr,
+		"user", app.Config.DB.User,
+		"db_name", app.Config.DB.Name,
 	).Info("Opening the database")
 
 	// Database configuration
-	store, err := postgres.OpenTrackStore(&app.Config.Storage)
+	store, err := postgres.OpenTrackStore(&app.Config.DB)
 	if err != nil {
 		app.Log.WithError(err).Fatal("Failed to open the database")
 	}
