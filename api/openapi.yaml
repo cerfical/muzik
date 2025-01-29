@@ -1,0 +1,138 @@
+openapi: 3.0.0
+info:
+  title: Music Tracks API
+  description: Simple REST API for managing music libraries
+  version: 0.1.0
+servers:
+  - url: http://127.0.0.1:8080/api
+    description: Local development server
+tags:
+  - name: Tracks
+    description: Operations related to music tracks
+paths:
+  /tracks/{id}:
+    get:
+      summary: Returns a track by ID
+      tags: [Tracks]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: integer }
+          required: true
+          example: 2
+      responses:
+        "200": { $ref: "#/components/responses/TrackData" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default: { $ref: "#/components/responses/InternalError" }
+  /tracks/:
+    get:
+      summary: Returns a list of all tracks
+      tags: [Tracks]
+      responses:
+        "200": { $ref: "#/components/responses/TracksData" }
+        default: { $ref: "#/components/responses/InternalError" }
+    post:
+      summary: Creates a new track
+      tags: [Tracks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: { $ref: "#/components/schemas/Track" }
+            example:
+              data:
+                title: Track Title
+      responses:
+        "201": { $ref: "#/components/responses/TrackData" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        default: { $ref: "#/components/responses/InternalError" }
+components:
+  responses:
+    TrackData:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data: { $ref: "#/components/schemas/Track" }
+          example:
+            data:
+              id: "94"
+              title: New Year
+    TracksData:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items: { $ref: "#/components/schemas/Track" }
+          example:
+            data:
+              - id: "4"
+                title: Old
+              - id: "9"
+                title: Help
+    BadRequest:
+      description: Request is ill-formed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error:
+              status: "400"
+              title: Bad request
+              detail: Request body is malformed
+    NotFound:
+      description: Referencing a non-existent resource
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error:
+              status: "404"
+              title: Track not found
+              detail: Track with ID 1 does not exist
+    InternalError:
+      description: Reports an internal server failure
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error:
+              status: "500"
+              title: Internal server error
+              detail: Storage failure
+  schemas:
+    Track:
+      description: Defines the data model for music tracks
+      type: object
+      properties:
+        id:
+          type: string
+          example: "2"
+        title:
+          type: string
+          example: Waterloo
+    Error:
+      description: Defines the structure of failed responses
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            status:
+              type: string
+              example: "400"
+            title:
+              type: string
+              example: "Bad request"
+            detail:
+              type: string
+              example: "Request body is malformed"
