@@ -2,8 +2,10 @@ package json
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/cerfical/muzik/internal/log"
 )
@@ -33,19 +35,22 @@ func (r *Responser) Created(id int, data any) {
 }
 
 // NotFound reports a non-existent resource.
-func (r *Responser) NotFound() {
-	r.error("track not found", "track with such ID does not exist", http.StatusNotFound)
+func (r *Responser) NotFound(id int) {
+	r.error("track not found", fmt.Sprintf("no track with such ID: %d", id), http.StatusNotFound)
 }
 
-// MalformedRequest reports a malformed request body.
-func (r *Responser) MalformedRequest(msg string) {
-	r.error("malformed request body", msg, http.StatusBadRequest)
+// BadRequest reports a malformed request body.
+func (r *Responser) BadRequest(msg string) {
+	r.error("bad request", msg, http.StatusBadRequest)
 }
 
 // RequestParseError reports an unexpected error in request parsing.
 func (r *Responser) RequestParseError(err error) {
-	r.logError("Failed to parse the request body", err)
-	r.internalError("request parsing failure", "something unexpected happened while parsing the request body")
+	r.internalError(
+		"failed to parse the request",
+		"something unexpected happened while parsing the request",
+		err,
+	)
 }
 
 // StorageWriteError reports a write error to the storage.
@@ -59,11 +64,11 @@ func (r *Responser) StorageReadError(err error) {
 }
 
 func (r *Responser) storageError(detail string, err error) {
-	r.logError("Storage failure", err)
-	r.internalError("storage failure", detail)
+	r.internalError("storage failure", detail, err)
 }
 
-func (r *Responser) internalError(title, detail string) {
+func (r *Responser) internalError(title, detail string, err error) {
+	r.logError(title, err)
 	r.error(title, detail, http.StatusInternalServerError)
 }
 
@@ -87,8 +92,8 @@ func (r *Responser) error(title, detail string, code int) {
 	}
 
 	response.Error.Status = code
-	response.Error.Title = title
-	response.Error.Detail = detail
+	response.Error.Title = capitalize(title)
+	response.Error.Detail = capitalize(detail)
 
 	r.writeResponse(&response, code)
 }
@@ -104,6 +109,15 @@ func (r *Responser) writeResponse(response any, status int) {
 
 func (r *Responser) logError(msg string, err error) {
 	if r.log != nil {
-		r.log.WithError(err).Error(msg)
+		r.log.WithError(err).Error(capitalize(msg))
 	}
+}
+
+// capitalize upper-cases the first letter of a string.
+// No support for UTF-8.
+func capitalize(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }

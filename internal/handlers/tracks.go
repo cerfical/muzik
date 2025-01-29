@@ -20,14 +20,14 @@ func (h *Tracks) Get(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		responser.NotFound()
+		responser.BadRequest("supplied ID is not an integer")
 		return
 	}
 
 	track, err := h.Store.TrackByID(id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
-			responser.NotFound()
+			responser.NotFound(id)
 			return
 		}
 
@@ -56,7 +56,7 @@ func (h *Tracks) Create(w http.ResponseWriter, r *http.Request) {
 	var track model.Track
 	if err := json.ParseData(r.Body, &track); err != nil {
 		if parseErr := (*json.ParseError)(nil); errors.As(err, &parseErr) {
-			responser.MalformedRequest(parseErr.Error())
+			responser.BadRequest(parseErr.Error())
 		} else {
 			responser.RequestParseError(err)
 		}
