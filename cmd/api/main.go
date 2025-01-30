@@ -41,7 +41,6 @@ func main() {
 	app.Route("POST", "/api/tracks/", tracks.Create)
 
 	// Middleware
-	app.Use(middleware.HasContentType("application/json"))
 	app.Use(middleware.LogRequest(app.Log))
 
 	app.Run()
