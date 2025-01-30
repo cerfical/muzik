@@ -24,20 +24,9 @@ func New(args []string) *App {
 	a.Log = a.Log.WithLevel(a.Config.Log.Level)
 	a.router = mux.NewRouter()
 
-	a.Use(fillPathParams)
+	a.router.Use(fillPathParams)
 
 	return &a
-}
-
-// fillPathParams makes gorilla/mux path parameters available via [http.Request.PathValue].
-func fillPathParams(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for key, val := range mux.Vars(r) {
-			r.SetPathValue(key, val)
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }
 
 func loadConfig(args []string, l *log.Logger) *config.Config {
@@ -58,12 +47,6 @@ type App struct {
 	router *mux.Router
 }
 
-type Middleware func(http.Handler) http.Handler
-
-func (a *App) Use(m Middleware) {
-	a.router.Use(mux.MiddlewareFunc(m))
-}
-
 func (a *App) Route(method, path string, h http.HandlerFunc) {
 	a.router.HandleFunc(path, h).Methods(method)
 }
@@ -80,8 +63,9 @@ func (a *App) Run() {
 	}
 
 	serv := http.Server{
-		Addr:     a.Config.Server.Addr,
-		Handler:  a.router,
+		Addr: a.Config.Server.Addr,
+		// Log requests before any routing logic applies
+		Handler:  logRequest(a.Log)(a.router),
 		ErrorLog: stdlog.New(&httpErrorLog{a.Log}, "", 0),
 	}
 

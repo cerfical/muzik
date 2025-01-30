@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/cerfical/muzik/internal/handlers"
-	"github.com/cerfical/muzik/internal/middleware"
 	"github.com/cerfical/muzik/internal/postgres"
 	"github.com/cerfical/muzik/internal/webapp"
 )
@@ -39,9 +38,6 @@ func main() {
 	app.Route("GET", "/api/tracks/{id}", tracks.Get)
 	app.Route("GET", "/api/tracks/", tracks.GetAll)
 	app.Route("POST", "/api/tracks/", tracks.Create)
-
-	// Middleware
-	app.Use(middleware.LogRequest(app.Log))
 
 	app.Run()
 }

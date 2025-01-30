@@ -1,4 +1,4 @@
-package middleware
+package webapp
 
 import (
 	"fmt"
@@ -6,9 +6,22 @@ import (
 	"time"
 
 	"github.com/cerfical/muzik/internal/log"
+	"github.com/gorilla/mux"
 )
 
-func LogRequest(l *log.Logger) func(http.Handler) http.Handler {
+// fillPathParams makes gorilla/mux path parameters available via [http.Request.PathValue].
+func fillPathParams(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for key, val := range mux.Vars(r) {
+			r.SetPathValue(key, val)
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// logRequest logs all incoming requests to the specified [log.Logger].
+func logRequest(l *log.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ww := loggingResponseWriter{ResponseWriter: w}
