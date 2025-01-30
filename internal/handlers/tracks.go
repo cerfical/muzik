@@ -16,57 +16,59 @@ type Tracks struct {
 }
 
 func (h *Tracks) Get(w http.ResponseWriter, r *http.Request) {
-	responser := json.NewResponser(w, r, h.Log)
-
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		responser.BadRequest("supplied ID is not an integer")
+		NotFound(w, r)
 		return
 	}
 
 	track, err := h.Store.TrackByID(id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
-			responser.NotFound(id)
+			NotFound(w, r)
 			return
 		}
 
-		responser.StorageReadError(err)
+		h.Log.Error("error reading from the database", err)
+		InternalError(w, r)
+
 		return
 	}
 
-	responser.ServeData(track)
+	json.Serve(w, track, http.StatusOK)
 }
 
 func (h *Tracks) GetAll(w http.ResponseWriter, r *http.Request) {
-	responser := json.NewResponser(w, r, h.Log)
-
 	tracks, err := h.Store.AllTracks()
 	if err != nil {
-		responser.StorageReadError(err)
+		h.Log.Error("error reading from the database", err)
+		InternalError(w, r)
 		return
 	}
 
-	responser.ServeData(tracks)
+	json.Serve(w, tracks, http.StatusOK)
 }
 
 func (h *Tracks) Create(w http.ResponseWriter, r *http.Request) {
-	responser := json.NewResponser(w, r, h.Log)
-
 	var track model.Track
-	if err := json.ParseData(r.Body, &track); err != nil {
+	if err := json.Read(r.Body, &track); err != nil {
 		if parseErr := (*json.ParseError)(nil); errors.As(err, &parseErr) {
-			responser.BadRequest(parseErr.Error())
+			json.Error(w, "request body is malformed", parseErr.Error(), http.StatusBadRequest)
 		} else {
-			responser.RequestParseError(err)
+			h.Log.Error("failed to read the request", err)
+			InternalError(w, r)
 		}
 		return
 	}
 
 	if err := h.Store.CreateTrack(&track); err != nil {
-		responser.StorageWriteError(err)
+		h.Log.Error("error writing to the database", err)
+		InternalError(w, r)
 		return
 	}
 
-	responser.Created(track.ID, &track)
+	location := r.URL.JoinPath(strconv.Itoa(track.ID))
+	w.Header().Set("Location", location.String())
+
+	json.Serve(w, &track, http.StatusCreated)
 }
