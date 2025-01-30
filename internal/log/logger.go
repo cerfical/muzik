@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cerfical/muzik/internal/strutil"
 	"github.com/rs/zerolog"
 )
 
@@ -28,24 +29,36 @@ type Logger struct {
 	logger zerolog.Logger
 }
 
-func (l *Logger) Fatal(msg string) {
-	l.log(LevelFatal, msg)
+func (l *Logger) Fatal(msg string, err error) {
+	l.log(LevelFatal, msg, err)
 	os.Exit(1)
 }
 
-func (l *Logger) Error(msg string) {
-	l.log(LevelError, msg)
+func (l *Logger) Error(msg string, err error) {
+	l.log(LevelError, msg, err)
 }
 
 func (l *Logger) Info(msg string) {
-	l.log(LevelInfo, msg)
+	l.log(LevelInfo, msg, nil)
 }
 
-func (l *Logger) log(lvl Level, msg string) {
-	l.logger.WithLevel(zerolog.Level(lvl)).Msg(msg)
+func (l *Logger) log(lvl Level, msg string, err error) {
+	if l == nil {
+		return
+	}
+
+	logEv := l.logger.WithLevel(zerolog.Level(lvl))
+	if err != nil {
+		logEv = logEv.Err(err)
+	}
+	logEv.Msg(strutil.Capitalize(msg))
 }
 
 func (l *Logger) WithLevel(lvl Level) *Logger {
+	if l == nil {
+		return l
+	}
+
 	return &Logger{l.logger.Level(zerolog.Level(lvl))}
 }
 
@@ -53,9 +66,10 @@ func (l *Logger) WithFields(fields ...any) *Logger {
 	if len(fields)%2 != 0 {
 		panic("expected an even number of arguments")
 	}
-	return &Logger{l.logger.With().Fields(fields).Logger()}
-}
 
-func (l *Logger) WithError(err error) *Logger {
-	return &Logger{l.logger.With().Err(err).Logger()}
+	if l == nil {
+		return l
+	}
+
+	return &Logger{l.logger.With().Fields(fields).Logger()}
 }

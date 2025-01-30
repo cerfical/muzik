@@ -27,7 +27,7 @@ func New(args []string) *App {
 func loadConfig(args []string, l *log.Logger) *config.Config {
 	c, err := config.Load(args)
 	if err != nil {
-		l.WithError(err).Fatal("Error loading config file")
+		l.Fatal("error loading config file", err)
 	}
 	return c
 }
@@ -56,7 +56,7 @@ func (a *App) Route(path string, h http.HandlerFunc) {
 }
 
 func (a *App) Run() {
-	a.Log.WithFields("addr", a.Config.Server.Addr).Info("Starting up the server")
+	a.Log.WithFields("addr", a.Config.Server.Addr).Info("starting up the server")
 
 	serv := http.Server{
 		Addr:     a.Config.Server.Addr,
@@ -70,7 +70,7 @@ func (a *App) Run() {
 
 	go func() {
 		if err := serv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			a.Log.WithError(err).Error("Server terminated abnormally")
+			a.Log.Error("server terminated abnormally", err)
 		}
 
 		// Make sure the outer goroutine unblocks in case the server was terminated before any signals arrived
@@ -82,11 +82,11 @@ func (a *App) Run() {
 	if _, ok := <-sigChan; !ok {
 		return
 	}
-	a.Log.Info("Shutting down the server")
+	a.Log.Info("shutting down the server")
 
 	// Try to shutdown the server cleanly and if that fails, close the server
 	if err := serv.Shutdown(context.Background()); err != nil {
-		a.Log.WithError(err).Error("Server shutdown failed")
+		a.Log.Error("server shutdown failed", err)
 		serv.Close()
 	}
 }
@@ -103,7 +103,7 @@ func (w *httpErrorLog) Write(p []byte) (int, error) {
 		n--
 	}
 
-	w.WithError(errors.New(string(p))).Error("HTTP serve error")
+	w.Error("HTTP serve error", errors.New(string(p)))
 	return n, nil
 }
 

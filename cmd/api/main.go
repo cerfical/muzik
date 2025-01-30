@@ -16,18 +16,18 @@ func main() {
 		"addr", app.Config.DB.Addr,
 		"user", app.Config.DB.User,
 		"name", app.Config.DB.Name,
-	).Info("Opening the database")
+	).Info("opening the database")
 
 	// Database configuration
 	store, err := postgres.OpenTrackStore(&app.Config.DB)
 	if err != nil {
-		app.Log.WithError(err).Fatal("Failed to open the database")
+		app.Log.Fatal("failed to open the database", err)
 	}
 
 	defer func() {
-		app.Log.Info("Closing the database")
+		app.Log.Info("closing the database")
 		if err := store.Close(); err != nil {
-			app.Log.WithError(err).Error("Failed to close the database")
+			app.Log.Error("failed to close the database", err)
 		}
 	}()
 

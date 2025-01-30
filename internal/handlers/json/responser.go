@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/cerfical/muzik/internal/log"
+	"github.com/cerfical/muzik/internal/strutil"
 )
 
 func NewResponser(w http.ResponseWriter, r *http.Request, log *log.Logger) *Responser {
@@ -92,8 +92,8 @@ func (r *Responser) error(title, detail string, code int) {
 	}
 
 	response.Error.Status = code
-	response.Error.Title = capitalize(title)
-	response.Error.Detail = capitalize(detail)
+	response.Error.Title = strutil.Capitalize(title)
+	response.Error.Detail = strutil.Capitalize(detail)
 
 	r.writeResponse(&response, code)
 }
@@ -109,15 +109,6 @@ func (r *Responser) writeResponse(response any, status int) {
 
 func (r *Responser) logError(msg string, err error) {
 	if r.log != nil {
-		r.log.WithError(err).Error(capitalize(msg))
+		r.log.Error(msg, err)
 	}
-}
-
-// capitalize upper-cases the first letter of a string.
-// No support for UTF-8.
-func capitalize(s string) string {
-	if s == "" {
-		return s
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
 }
