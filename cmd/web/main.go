@@ -11,7 +11,7 @@ import (
 func main() {
 	app := webapp.New(os.Args)
 
-	app.Route("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+	app.Route("GET", "/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "static/index.html")
 	})
 	app.Use(middleware.LogRequest(app.Log))

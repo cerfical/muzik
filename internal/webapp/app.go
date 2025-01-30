@@ -12,6 +12,8 @@ import (
 
 	"github.com/cerfical/muzik/internal/config"
 	"github.com/cerfical/muzik/internal/log"
+
+	"github.com/gorilla/mux"
 )
 
 func New(args []string) *App {
@@ -20,8 +22,22 @@ func New(args []string) *App {
 	a.Log = log.New()
 	a.Config = loadConfig(args, a.Log)
 	a.Log = a.Log.WithLevel(a.Config.Log.Level)
+	a.router = mux.NewRouter()
+
+	a.Use(fillPathParams)
 
 	return &a
+}
+
+// fillPathParams makes gorilla/mux path parameters available via [http.Request.PathValue].
+func fillPathParams(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for key, val := range mux.Vars(r) {
+			r.SetPathValue(key, val)
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func loadConfig(args []string, l *log.Logger) *config.Config {
@@ -36,31 +52,36 @@ type App struct {
 	Config *config.Config
 	Log    *log.Logger
 
-	middleware []Middleware
-	routes     []route
+	NotFound         http.HandlerFunc
+	MethodNotAllowed http.HandlerFunc
+
+	router *mux.Router
 }
 
 type Middleware func(http.Handler) http.Handler
 
-type route struct {
-	path    string
-	handler http.HandlerFunc
-}
-
 func (a *App) Use(m Middleware) {
-	a.middleware = append(a.middleware, m)
+	a.router.Use(mux.MiddlewareFunc(m))
 }
 
-func (a *App) Route(path string, h http.HandlerFunc) {
-	a.routes = append(a.routes, route{path, h})
+func (a *App) Route(method, path string, h http.HandlerFunc) {
+	a.router.HandleFunc(path, h).Methods(method)
 }
 
 func (a *App) Run() {
 	a.Log.WithFields("addr", a.Config.Server.Addr).Info("starting up the server")
 
+	if a.MethodNotAllowed != nil {
+		a.router.MethodNotAllowedHandler = a.MethodNotAllowed
+	}
+
+	if a.NotFound != nil {
+		a.router.NotFoundHandler = a.NotFound
+	}
+
 	serv := http.Server{
 		Addr:     a.Config.Server.Addr,
-		Handler:  setupMiddleware(setupRouter(a.routes), a.middleware),
+		Handler:  a.router,
 		ErrorLog: stdlog.New(&httpErrorLog{a.Log}, "", 0),
 	}
 
@@ -105,19 +126,4 @@ func (w *httpErrorLog) Write(p []byte) (int, error) {
 
 	w.Error("HTTP serve error", errors.New(string(p)))
 	return n, nil
-}
-
-func setupRouter(routes []route) http.Handler {
-	mux := http.NewServeMux()
-	for _, r := range routes {
-		mux.HandleFunc(r.path, r.handler)
-	}
-	return mux
-}
-
-func setupMiddleware(h http.Handler, m []Middleware) http.Handler {
-	for _, m := range m {
-		h = m(h)
-	}
-	return h
 }

@@ -31,12 +31,16 @@ func main() {
 		}
 	}()
 
+	app.MethodNotAllowed = handlers.MethodNotAllowed
+	app.NotFound = handlers.NotFound
+
 	// Setup routes
 	tracks := handlers.Tracks{Store: store, Log: app.Log}
-	app.Route("GET /api/tracks/{id}", tracks.Get)
-	app.Route("GET /api/tracks/{$}", tracks.GetAll)
-	app.Route("POST /api/tracks/{$}", tracks.Create)
+	app.Route("GET", "/api/tracks/{id}", tracks.Get)
+	app.Route("GET", "/api/tracks/", tracks.GetAll)
+	app.Route("POST", "/api/tracks/", tracks.Create)
 
+	// Middleware
 	app.Use(middleware.HasContentType("application/json"))
 	app.Use(middleware.LogRequest(app.Log))
 
