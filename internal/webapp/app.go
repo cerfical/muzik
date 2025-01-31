@@ -55,7 +55,7 @@ func (a *App) Run() {
 	a.Log.WithFields("addr", a.Config.Server.Addr).Info("starting up the server")
 
 	if a.MethodNotAllowed != nil {
-		a.router.MethodNotAllowedHandler = a.MethodNotAllowed
+		a.router.MethodNotAllowedHandler = allowMethods(a.router, a.MethodNotAllowed)
 	}
 
 	if a.NotFound != nil {
