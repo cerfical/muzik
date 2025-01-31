@@ -9,24 +9,24 @@ import (
 
 func MethodNotAllowed(w http.ResponseWriter, r *http.Request) {
 	json.Error(w,
-		"request method is not allowed",
-		fmt.Sprintf("the endpoint does not support a method '%s'", r.Method),
+		"method not allowed",
+		fmt.Sprintf("the requested resource does not support a method '%s'", r.Method),
 		http.StatusMethodNotAllowed,
 	)
 }
 
 func NotFound(w http.ResponseWriter, r *http.Request) {
 	json.Error(w,
-		"the requested resource does not exist",
-		"",
+		"resource not found",
+		fmt.Sprintf("the requested path '%s' does not refer to a valid resource", r.URL.Path),
 		http.StatusNotFound,
 	)
 }
 
 func InternalError(w http.ResponseWriter, r *http.Request) {
 	json.Error(w,
-		"internal server failure",
-		"",
+		"internal server error",
+		"something very bad happened on the server side",
 		http.StatusInternalServerError,
 	)
 }
