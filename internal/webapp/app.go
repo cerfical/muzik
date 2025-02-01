@@ -41,9 +41,6 @@ type App struct {
 	Config *config.Config
 	Log    *log.Logger
 
-	NotFound         http.HandlerFunc
-	MethodNotAllowed http.HandlerFunc
-
 	router *mux.Router
 }
 
@@ -51,17 +48,16 @@ func (a *App) Route(method, path string, h http.HandlerFunc) {
 	a.router.HandleFunc(path, h).Methods(method)
 }
 
+func (a *App) NotFound(h http.HandlerFunc) {
+	a.router.NotFoundHandler = h
+}
+
+func (a *App) UnknownMethod(h http.HandlerFunc) {
+	a.router.MethodNotAllowedHandler = allowMethods(a.router, h)
+}
+
 func (a *App) Run() {
 	a.Log.WithFields("addr", a.Config.Server.Addr).Info("starting up the server")
-
-	if a.MethodNotAllowed != nil {
-		a.router.MethodNotAllowedHandler = allowMethods(a.router, a.MethodNotAllowed)
-	}
-
-	if a.NotFound != nil {
-		a.router.NotFoundHandler = a.NotFound
-	}
-
 	serv := http.Server{
 		Addr: a.Config.Server.Addr,
 		// Log requests before any routing logic applies

@@ -30,14 +30,14 @@ func main() {
 		}
 	}()
 
-	app.MethodNotAllowed = handlers.MethodNotAllowed
-	app.NotFound = handlers.NotFound
-
 	// Setup routes
 	tracks := handlers.Tracks{Store: store, Log: app.Log}
 	app.Route("GET", "/api/tracks/{id}", tracks.Get)
 	app.Route("GET", "/api/tracks/", tracks.GetAll)
 	app.Route("POST", "/api/tracks/", tracks.Create)
+
+	app.UnknownMethod(handlers.MethodNotAllowed)
+	app.NotFound(handlers.NotFound)
 
 	app.Run()
 }
