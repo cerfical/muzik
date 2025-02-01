@@ -54,11 +54,11 @@ func (a *App) Route(method, path string, h http.HandlerFunc) {
 	a.router.HandleFunc(path, h).Methods(method)
 }
 
-func (a *App) NotFound(h http.HandlerFunc) {
+func (a *App) NoRoute(h http.HandlerFunc) {
 	a.router.NotFoundHandler = h
 }
 
-func (a *App) UnknownMethod(h http.HandlerFunc) {
+func (a *App) NoMethod(h http.HandlerFunc) {
 	a.router.MethodNotAllowedHandler = allowMethods(a.router, h)
 }
 

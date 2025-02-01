@@ -13,7 +13,7 @@ func Accepts(mediaType string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			if checkAcceptHeader(mediaType, r.Header.Get("Accept")) {
-				next.ServeHTTP(w, r)
+				next(w, r)
 				return
 			}
 

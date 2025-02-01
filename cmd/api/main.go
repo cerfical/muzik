@@ -40,8 +40,8 @@ func main() {
 	app.Use(middleware.HasContentType("application/json"))
 	app.Use(middleware.Accepts("application/json"))
 
-	app.UnknownMethod(errors.MethodNotAllowed)
-	app.NotFound(errors.NotFound)
+	app.NoMethod(errors.MethodNotAllowed)
+	app.NoRoute(errors.NotFound)
 
 	app.Run()
 }

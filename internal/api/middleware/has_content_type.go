@@ -13,7 +13,7 @@ func HasContentType(mediaType string) func(http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			contentType := r.Header.Get("Content-Type")
 			if !hasContentBody(r) || checkContentType(contentType, mediaType) {
-				next.ServeHTTP(w, r)
+				next(w, r)
 				return
 			}
 
