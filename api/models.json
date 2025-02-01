@@ -1,0 +1,68 @@
+{
+    "$def": {
+        "trackData": {
+            "description": "Describes a single track resource as returned by server",
+            "type": "object",
+            "properties": {
+                "data": { "$ref": "#/$def/track" }
+            },
+            "required": [ "data" ],
+            "additionalProperties": false
+        },
+        "tracksData": {
+            "description": "Describes a collection of track resources as returned by server",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": { "$ref": "#/$def/track" }
+                }
+            },
+            "required": [ "data" ],
+            "additionalProperties": false
+        },
+        "track": {
+            "description": "Defines the data model for music tracks",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "2"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Waterloo"
+                }
+            },
+            "required": [ "title" ],
+            "additionalProperties": false
+        },
+        "error": {
+            "description": "Defines the structure of error responses as returned by server",
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "object",
+                    "properties": {
+                        "status": {
+                            "type": "string",
+                            "example": "400"
+                        },
+                        "title": {
+                            "type": "string",
+                            "example": "Bad request"
+                        },
+                        "detail": {
+                            "type": "string",
+                            "example": "Syntax error at position 1"
+                        }
+                    },
+                    "required": [ "status", "title" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "error" ],
+            "additionalProperties": false
+        }
+    }
+}

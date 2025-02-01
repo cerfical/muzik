@@ -38,10 +38,7 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              properties:
-                data: { $ref: "#/components/schemas/Track" }
+            schema: { $ref: "#/components/schemas/TrackData" }
             example:
               data:
                 title: Track Title
@@ -55,10 +52,7 @@ components:
       description: OK
       content:
         application/json:
-          schema:
-            type: object
-            properties:
-              data: { $ref: "#/components/schemas/Track" }
+          schema: { $ref: "#/components/schemas/TrackData" }
           example:
             data:
               id: "94"
@@ -67,12 +61,7 @@ components:
       description: OK
       content:
         application/json:
-          schema:
-            type: object
-            properties:
-              data:
-                type: array
-                items: { $ref: "#/components/schemas/Track" }
+          schema: { $ref: "#/components/schemas/TracksData" }
           example:
             data:
               - id: "4"
@@ -110,29 +99,7 @@ components:
               title: Internal server error
               detail: Storage failure
   schemas:
-    Track:
-      description: Defines the data model for music tracks
-      type: object
-      properties:
-        id:
-          type: string
-          example: "2"
-        title:
-          type: string
-          example: Waterloo
-    Error:
-      description: Defines the structure of failed responses
-      type: object
-      properties:
-        error:
-          type: object
-          properties:
-            status:
-              type: string
-              example: "400"
-            title:
-              type: string
-              example: "Bad request"
-            detail:
-              type: string
-              example: "Request body is malformed"
+    Track: { $ref: "models.json#/$def/track" }
+    TrackData: { $ref: "models.json#/$def/trackData" }
+    TracksData: { $ref: "models.json#/$def/tracksData" }
+    Error: { $ref: "models.json#/$def/error" }

@@ -2,8 +2,10 @@ package handlers_test
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
-	"strconv"
+	"net/url"
+	"path/filepath"
 	"testing"
 
 	"github.com/cerfical/muzik/internal/api/handlers"
@@ -51,7 +53,7 @@ func (t *TracksTest) TestTracks_Get() {
 		storeErr  error
 		matcher   func(*httpexpect.Response)
 	}{
-		{"ok", track.ID, &track, nil, dataMatcher(http.StatusOK, &track)},
+		{"ok", track.ID, &track, nil, trackDataMatcher(http.StatusOK, &track)},
 		{"not_found", track.ID, nil, model.ErrNotFound, errorMatcher(http.StatusNotFound)},
 		{"invalid_id", "invalid_id", nil, nil, errorMatcher(http.StatusNotFound)},
 		{"storage_fail", track.ID, nil, errors.New(""), errorMatcher(http.StatusInternalServerError)},
@@ -85,8 +87,8 @@ func (t *TracksTest) TestTracks_GetAll() {
 		storeErr  error
 		matcher   func(*httpexpect.Response)
 	}{
-		{"ok", tracks, nil, dataMatcher(http.StatusOK, tracks)},
-		{"empty", empty, nil, dataMatcher(http.StatusOK, empty)},
+		{"ok", tracks, nil, tracksDataMatcher(http.StatusOK, tracks)},
+		{"empty", empty, nil, tracksDataMatcher(http.StatusOK, empty)},
 		{"storage_fail", nil, errors.New(""), errorMatcher(http.StatusInternalServerError)},
 	}
 
@@ -119,7 +121,7 @@ func (t *TracksTest) TestTracks_Create() {
 		location  string
 		matcher   func(*httpexpect.Response)
 	}{
-		{"ok", &track, nil, body, "/7", dataMatcher(http.StatusCreated, &track)},
+		{"ok", &track, nil, body, "/7", trackDataMatcher(http.StatusCreated, &track)},
 		{"bad_request", nil, nil, "{}", "", errorMatcher(http.StatusBadRequest)},
 		{"storage_fail", &track, errors.New(""), body, "", errorMatcher(http.StatusInternalServerError)},
 	}
@@ -144,20 +146,42 @@ func (t *TracksTest) TestTracks_Create() {
 
 func errorMatcher(status int) func(*httpexpect.Response) {
 	return func(r *httpexpect.Response) {
-		r.Status(status).JSON().
-			Object().
-			Value("error").
-			Object().
-			ContainsKey("title").
-			ContainsKey("detail").
-			HasValue("status", strconv.Itoa(status))
+		r.Status(status).
+			JSON().
+			Schema(modelRef("error"))
 	}
 }
 
-func dataMatcher(status int, data any) func(*httpexpect.Response) {
+func trackDataMatcher(status int, data any) func(*httpexpect.Response) {
 	return func(r *httpexpect.Response) {
-		r.Status(status).JSON().
+		r.Status(status).
+			JSON().
+			Schema(modelRef("trackData")).
 			Object().
-			HasValue("data", data)
+			ContainsValue(data)
 	}
+}
+
+func tracksDataMatcher(status int, data any) func(*httpexpect.Response) {
+	return func(r *httpexpect.Response) {
+		r.Status(status).
+			JSON().
+			Schema(modelRef("tracksData")).
+			Object().
+			ContainsValue(data)
+	}
+}
+
+func modelRef(modelName string) string {
+	p, err := filepath.Abs("../../../api/models.json")
+	if err != nil {
+		panic(err)
+	}
+
+	p, err = url.JoinPath("/", p)
+	if err != nil {
+		panic(err)
+	}
+
+	return fmt.Sprintf("file://%s#/$def/%s", p, modelName)
 }
