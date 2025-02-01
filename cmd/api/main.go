@@ -3,14 +3,15 @@ package main
 import (
 	"os"
 
-	"github.com/cerfical/muzik/internal/handlers"
+	"github.com/cerfical/muzik/internal/api/errors"
+	"github.com/cerfical/muzik/internal/api/handlers"
+	"github.com/cerfical/muzik/internal/api/middleware"
 	"github.com/cerfical/muzik/internal/postgres"
 	"github.com/cerfical/muzik/internal/webapp"
 )
 
 func main() {
 	app := webapp.New(os.Args)
-
 	app.Log.WithFields(
 		"addr", app.Config.DB.Addr,
 		"user", app.Config.DB.User,
@@ -36,8 +37,10 @@ func main() {
 	app.Route("GET", "/api/tracks/", tracks.GetAll)
 	app.Route("POST", "/api/tracks/", tracks.Create)
 
-	app.UnknownMethod(handlers.MethodNotAllowed)
-	app.NotFound(handlers.NotFound)
+	app.Use(middleware.HasContentType("application/json"))
+
+	app.UnknownMethod(errors.MethodNotAllowed)
+	app.NotFound(errors.NotFound)
 
 	app.Run()
 }

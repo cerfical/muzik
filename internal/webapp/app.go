@@ -44,6 +44,12 @@ type App struct {
 	router *mux.Router
 }
 
+func (a *App) Use(middleware func(http.HandlerFunc) http.HandlerFunc) {
+	a.router.Use(func(h http.Handler) http.Handler {
+		return middleware(h.ServeHTTP)
+	})
+}
+
 func (a *App) Route(method, path string, h http.HandlerFunc) {
 	a.router.HandleFunc(path, h).Methods(method)
 }

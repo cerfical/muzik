@@ -1,4 +1,4 @@
-package json
+package api
 
 import (
 	"encoding/json"
@@ -8,28 +8,23 @@ import (
 	"strings"
 )
 
-func Read(r io.Reader, data any) error {
+func ReadRequest[T any](r io.Reader) (*Request[T], error) {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 
-	request := struct {
-		Data any `json:"data"`
-	}{
-		Data: data,
-	}
-
+	var request Request[T]
 	if err := dec.Decode(&request); err != nil {
 		if errMsg, ok := describeError(err); ok {
-			return &ParseError{errMsg}
+			return nil, &ParseError{errMsg}
 		}
-		return err
+		return nil, err
 	}
 
 	if err := dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		return &ParseError{"request body must contain a single JSON object"}
+		return nil, &ParseError{"request body must contain a single JSON object"}
 	}
 
-	return nil
+	return &request, nil
 }
 
 func describeError(err error) (string, bool) {
@@ -69,6 +64,10 @@ func describeError(err error) (string, bool) {
 	}
 
 	return "", false
+}
+
+type Request[T any] struct {
+	Data T `json:"data"`
 }
 
 type ParseError struct {

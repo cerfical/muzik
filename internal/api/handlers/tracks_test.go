@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/cerfical/muzik/internal/handlers"
+	"github.com/cerfical/muzik/internal/api/handlers"
 	"github.com/cerfical/muzik/internal/mocks"
 	"github.com/cerfical/muzik/internal/model"
 	"github.com/stretchr/testify/suite"
