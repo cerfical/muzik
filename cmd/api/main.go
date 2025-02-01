@@ -38,6 +38,7 @@ func main() {
 	app.Route("POST", "/api/tracks/", tracks.Create)
 
 	app.Use(middleware.HasContentType("application/json"))
+	app.Use(middleware.Accepts("application/json"))
 
 	app.UnknownMethod(errors.MethodNotAllowed)
 	app.NotFound(errors.NotFound)
