@@ -39,6 +39,7 @@ func main() {
 
 	app.Use(middleware.HasContentType("application/json"))
 	app.Use(middleware.Accepts("application/json"))
+	app.Use(middleware.PanicRecover(app.Log))
 
 	app.NoMethod(errors.MethodNotAllowed)
 	app.NoRoute(errors.NotFound)

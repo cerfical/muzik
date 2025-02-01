@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"github.com/cerfical/muzik/internal/strutil"
+
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/pkgerrors"
 )
 
 func New() *Logger {
@@ -15,6 +17,7 @@ func New() *Logger {
 
 	return &Logger{
 		logger: zerolog.New(out).With().
+			Stack().
 			Timestamp().
 			Logger(),
 	}
@@ -23,6 +26,7 @@ func New() *Logger {
 func init() {
 	// Free the "time" field name for request timing
 	zerolog.TimestampFieldName = "timestamp"
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 }
 
 type Logger struct {
