@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mime"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/cerfical/muzik/internal/api/errors"
@@ -39,8 +40,21 @@ func checkAcceptHeader(supportedType, acceptHeader string) bool {
 
 	for _, accType := range accTypes {
 		accType, params, err := mime.ParseMediaType(accType)
-		if err != nil || len(params) > 0 {
+		if err != nil {
 			continue
+		}
+
+		if len(params) > 0 {
+			// Q-values is the only allowed media type parameter
+			val, ok := params["q"]
+			if len(params) != 1 || !ok {
+				continue
+			}
+
+			// Q-value is invalid, or explicitly set to 0
+			if valNum, err := strconv.ParseFloat(val, 64); err != nil || valNum == 0 {
+				continue
+			}
 		}
 
 		accMain, accSub := splitMediaType(accType)
