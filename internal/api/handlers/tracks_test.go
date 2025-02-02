@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"testing"
 
+	"github.com/cerfical/muzik/internal/api"
 	"github.com/cerfical/muzik/internal/api/handlers"
 	"github.com/cerfical/muzik/internal/mocks"
 	"github.com/cerfical/muzik/internal/model"
@@ -53,10 +55,10 @@ func (t *TracksTest) TestTracks_Get() {
 		storeErr  error
 		matcher   func(*httpexpect.Response)
 	}{
-		{"ok", track.ID, &track, nil, trackDataMatcher(http.StatusOK, &track)},
-		{"not_found", track.ID, nil, model.ErrNotFound, errorMatcher(http.StatusNotFound)},
-		{"invalid_id", "invalid_id", nil, nil, errorMatcher(http.StatusNotFound)},
-		{"storage_fail", track.ID, nil, errors.New(""), errorMatcher(http.StatusInternalServerError)},
+		{"200_ok", track.ID, &track, nil, trackDataMatcher(http.StatusOK, &track)},
+		{"404_not_found", track.ID, nil, model.ErrNotFound, errorMatcher(http.StatusNotFound)},
+		{"404_invalid_id", "invalid_id", nil, nil, errorMatcher(http.StatusNotFound)},
+		{"500_storage_fail", track.ID, nil, errors.New(""), errorMatcher(http.StatusInternalServerError)},
 	}
 
 	for _, test := range tests {
@@ -87,9 +89,9 @@ func (t *TracksTest) TestTracks_GetAll() {
 		storeErr  error
 		matcher   func(*httpexpect.Response)
 	}{
-		{"ok", tracks, nil, tracksDataMatcher(http.StatusOK, tracks)},
-		{"empty", empty, nil, tracksDataMatcher(http.StatusOK, empty)},
-		{"storage_fail", nil, errors.New(""), errorMatcher(http.StatusInternalServerError)},
+		{"200_ok", tracks, nil, tracksDataMatcher(http.StatusOK, tracks)},
+		{"200_empty", empty, nil, tracksDataMatcher(http.StatusOK, empty)},
+		{"500_storage_fail", nil, errors.New(""), errorMatcher(http.StatusInternalServerError)},
 	}
 
 	for _, test := range tests {
@@ -107,11 +109,7 @@ func (t *TracksTest) TestTracks_GetAll() {
 
 func (t *TracksTest) TestTracks_Create() {
 	track := model.Track{ID: 7, Title: "Example Track"}
-	body := struct {
-		Data *model.Track `json:"data"`
-	}{
-		Data: &track,
-	}
+	body := api.Request[model.Track]{Data: track}
 
 	tests := []struct {
 		name      string
@@ -121,9 +119,9 @@ func (t *TracksTest) TestTracks_Create() {
 		location  string
 		matcher   func(*httpexpect.Response)
 	}{
-		{"ok", &track, nil, body, "/7", trackDataMatcher(http.StatusCreated, &track)},
-		{"bad_request", nil, nil, "{}", "", errorMatcher(http.StatusBadRequest)},
-		{"storage_fail", &track, errors.New(""), body, "", errorMatcher(http.StatusInternalServerError)},
+		{"201_ok", &track, nil, body, "/7", trackDataMatcher(http.StatusCreated, &track)},
+		{"400_bad_request", nil, nil, "{}", "", errorMatcher(http.StatusBadRequest)},
+		{"500_storage_fail", &track, errors.New(""), body, "", errorMatcher(http.StatusInternalServerError)},
 	}
 
 	for _, test := range tests {
@@ -146,9 +144,13 @@ func (t *TracksTest) TestTracks_Create() {
 
 func errorMatcher(status int) func(*httpexpect.Response) {
 	return func(r *httpexpect.Response) {
-		r.Status(status).
+		obj := r.Status(status).
 			JSON().
-			Schema(modelRef("error"))
+			Schema(modelRef("error")).
+			Object()
+
+		obj.Path("$.error.status").
+			IsEqual(strconv.Itoa(status))
 	}
 }
 
