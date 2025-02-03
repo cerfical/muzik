@@ -14,9 +14,14 @@ import (
 const encodeMediaType = "application/json"
 
 type apiError struct {
-	Status int    `json:"status,string"`
-	Title  string `json:"title"`
-	Detail string `json:"detail,omitempty"`
+	Status int          `json:"status,string"`
+	Title  string       `json:"title"`
+	Detail string       `json:"detail,omitempty"`
+	Source *errorSource `json:"source,omitempty"`
+}
+
+type errorSource struct {
+	Header string `json:"header"`
 }
 
 func decodeData[T any](r io.Reader) (T, error) {
