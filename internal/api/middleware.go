@@ -159,9 +159,17 @@ func checkContentType(contentType, mediaType string) bool {
 	}
 
 	contentType, params, err := mime.ParseMediaType(contentType)
-	if err != nil || contentType != mediaType || len(params) > 0 {
+	if err != nil || contentType != mediaType {
 		return false
 	}
+
+	if len(params) > 0 {
+		// charset with the value utf-8 is the only allowed content type parameter
+		if val, ok := params["charset"]; len(params) != 1 || !ok || val != "utf-8" {
+			return false
+		}
+	}
+
 	return true
 }
 
