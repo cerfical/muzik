@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/cerfical/muzik/internal/httpserv"
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
@@ -46,11 +47,9 @@ func load(v *viper.Viper) (*Config, error) {
 }
 
 type Config struct {
-	Server struct {
-		Addr string
-	}
-	DB  DB
-	Log struct {
+	Server httpserv.Config
+	DB     DB
+	Log    struct {
 		Level log.Level
 	}
 }

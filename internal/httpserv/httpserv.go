@@ -1,4 +1,4 @@
-package api
+package httpserv
 
 import (
 	stdlog "log"
@@ -11,30 +11,16 @@ import (
 	"syscall"
 
 	"github.com/cerfical/muzik/internal/log"
-	"github.com/cerfical/muzik/internal/model"
 )
 
-func NewServer(store model.TrackStore, log *log.Logger) *Server {
-	var s Server
-	s.store = store
-	s.log = log
-	return &s
-}
+func Run(config *Config, h http.Handler, log *log.Logger) error {
+	log.WithFields("addr", config.Addr).Info("starting up the server")
 
-type Server struct {
-	store model.TrackStore
-	log   *log.Logger
-}
-
-func (s *Server) Run(addr string) error {
-	s.log.WithFields("addr", addr).Info("starting up the API server")
-
-	router := setupRouter(s.store, s.log)
 	serv := http.Server{
-		Addr: addr,
+		Addr: config.Addr,
 		// Log requests before any routing logic applies
-		Handler:  logRequest(s.log)(router),
-		ErrorLog: stdlog.New(&httpErrorLog{s.log}, "", 0),
+		Handler:  logRequest(log)(h),
+		ErrorLog: stdlog.New(&httpErrorLog{log}, "", 0),
 	}
 
 	// Graceful shutdown
@@ -59,9 +45,9 @@ func (s *Server) Run(addr string) error {
 	}
 
 	// Try to shutdown the server cleanly and if that fails, close the server
-	s.log.Info("shutting down the API server")
+	log.Info("shutting down the server")
 	if err := serv.Shutdown(context.Background()); err != nil {
-		s.log.Error("error shutting down the API server", err)
+		log.Error("error shutting down the server", err)
 		serv.Close()
 		return err
 	}

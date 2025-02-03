@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/cerfical/muzik/internal/config"
+	"github.com/cerfical/muzik/internal/httpserv"
 	"github.com/cerfical/muzik/internal/log"
 )
 
@@ -20,9 +21,7 @@ func main() {
 		http.ServeFile(w, r, "static/index.html")
 	})
 
-	log.WithFields("addr", config.Server.Addr).Info("starting up the WEB server")
-	if err := http.ListenAndServe(config.Server.Addr, index); err != nil {
-		log.Error("the WEB server terminated abnormally", err)
+	if err := httpserv.Run(&config.Server, index, log); err != nil {
+		log.Error("the server terminated abnormally", err)
 	}
-	log.Info("shutting down the WEB server")
 }

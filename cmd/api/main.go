@@ -5,6 +5,7 @@ import (
 
 	"github.com/cerfical/muzik/internal/api"
 	"github.com/cerfical/muzik/internal/config"
+	"github.com/cerfical/muzik/internal/httpserv"
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/postgres"
 )
@@ -35,8 +36,7 @@ func main() {
 		}
 	}()
 
-	server := api.NewServer(store, log)
-	if err := server.Run(config.Server.Addr); err != nil {
-		log.Error("the API server terminated abnormally", err)
+	if err := httpserv.Run(&config.Server, api.New(store, log), log); err != nil {
+		log.Error("the server terminated abnormally", err)
 	}
 }
