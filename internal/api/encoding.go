@@ -5,26 +5,41 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
+
+	"github.com/cerfical/muzik/internal/strutil"
 )
 
-func ReadRequest[T any](r io.Reader) (*Request[T], error) {
+const encodeMediaType = "application/json"
+
+type apiError struct {
+	Status int    `json:"status,string"`
+	Title  string `json:"title"`
+	Detail string `json:"detail,omitempty"`
+}
+
+func decodeData[T any](r io.Reader) (T, error) {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 
-	var request Request[T]
+	var empty T
+	var request struct {
+		Data T `json:"data"`
+	}
+
 	if err := dec.Decode(&request); err != nil {
 		if errMsg, ok := describeError(err); ok {
-			return nil, &ParseError{errMsg}
+			return empty, &parseError{errMsg}
 		}
-		return nil, err
+		return empty, err
 	}
 
 	if err := dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		return nil, &ParseError{"request body must contain a single JSON object"}
+		return empty, &parseError{"request body must contain a single JSON object"}
 	}
 
-	return &request, nil
+	return request.Data, nil
 }
 
 func describeError(err error) (string, bool) {
@@ -66,14 +81,40 @@ func describeError(err error) (string, bool) {
 	return "", false
 }
 
-type Request[T any] struct {
-	Data T `json:"data"`
-}
-
-type ParseError struct {
+type parseError struct {
 	msg string
 }
 
-func (e *ParseError) Error() string {
+func (e *parseError) Error() string {
 	return e.msg
+}
+
+func encodeData[T any](w http.ResponseWriter, data T, status int) error {
+	response := struct {
+		Data T `json:"data"`
+	}{
+		Data: data,
+	}
+
+	return encodeJSON(w, &response, status)
+}
+
+func encodeError(w http.ResponseWriter, e *apiError) error {
+	response := struct {
+		Error *apiError `json:"error"`
+	}{
+		Error: e,
+	}
+
+	response.Error.Title = strutil.Capitalize(response.Error.Title)
+	response.Error.Detail = strutil.Capitalize(response.Error.Detail)
+
+	return encodeJSON(w, &response, e.Status)
+}
+
+func encodeJSON(w http.ResponseWriter, data any, status int) error {
+	w.Header().Set("Content-Type", encodeMediaType)
+	w.WriteHeader(status)
+
+	return json.NewEncoder(w).Encode(data)
 }

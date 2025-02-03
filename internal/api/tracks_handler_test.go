@@ -1,4 +1,4 @@
-package handlers_test
+package api
 
 import (
 	"errors"
@@ -9,34 +9,32 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/cerfical/muzik/internal/api"
-	"github.com/cerfical/muzik/internal/api/handlers"
 	"github.com/cerfical/muzik/internal/mocks"
 	"github.com/cerfical/muzik/internal/model"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/gavv/httpexpect/v2"
+	"github.com/stretchr/testify/suite"
 )
 
 func TestTracks(t *testing.T) {
-	suite.Run(t, new(TracksTest))
+	suite.Run(t, new(TracksHandlerTest))
 }
 
-type TracksTest struct {
+type TracksHandlerTest struct {
 	suite.Suite
 
 	store  *mocks.TrackStore
 	expect *httpexpect.Expect
 }
 
-func (t *TracksTest) SetupSubTest() {
+func (t *TracksHandlerTest) SetupSubTest() {
 	t.store = mocks.NewTrackStore(t.T())
-	tracks := handlers.Tracks{Store: t.store}
+	tracks := tracksHandler{store: t.store}
 
 	router := http.NewServeMux()
-	router.HandleFunc("GET /{id}", tracks.Get)
-	router.HandleFunc("GET /", tracks.GetAll)
-	router.HandleFunc("POST /", tracks.Create)
+	router.HandleFunc("GET /{id}", tracks.get)
+	router.HandleFunc("GET /", tracks.getAll)
+	router.HandleFunc("POST /", tracks.create)
 
 	client := http.Client{Transport: httpexpect.NewBinder(router)}
 	t.expect = httpexpect.WithConfig(httpexpect.Config{
@@ -46,7 +44,7 @@ func (t *TracksTest) SetupSubTest() {
 	})
 }
 
-func (t *TracksTest) TestTracks_Get() {
+func (t *TracksHandlerTest) TestTracksHandler_Get() {
 	track := model.Track{ID: 7, Title: "Example Track"}
 	tests := []struct {
 		name      string
@@ -76,7 +74,7 @@ func (t *TracksTest) TestTracks_Get() {
 	}
 }
 
-func (t *TracksTest) TestTracks_GetAll() {
+func (t *TracksHandlerTest) TestTracksHandler_GetAll() {
 	tracks := []model.Track{
 		{ID: 7, Title: "Example Track #1"},
 		{ID: 2, Title: "Example Track #2"},
@@ -107,9 +105,13 @@ func (t *TracksTest) TestTracks_GetAll() {
 	}
 }
 
-func (t *TracksTest) TestTracks_Create() {
+func (t *TracksHandlerTest) TestTracksHandler_Create() {
 	track := model.Track{ID: 7, Title: "Example Track"}
-	body := api.Request[model.Track]{Data: track}
+	body := struct {
+		Data model.Track `json:"data"`
+	}{
+		Data: track,
+	}
 
 	tests := []struct {
 		name      string
@@ -175,7 +177,7 @@ func tracksDataMatcher(status int, data any) func(*httpexpect.Response) {
 }
 
 func modelRef(modelName string) string {
-	p, err := filepath.Abs("../../../api/models.json")
+	p, err := filepath.Abs("../../api/models.json")
 	if err != nil {
 		panic(err)
 	}
