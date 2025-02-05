@@ -10,8 +10,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+var sampleTrack = model.Track{
+	ID: 7,
+	Attrs: model.TrackAttrs{
+		Title: "Example Track",
+	},
+}
+
 func (t *APITest) TestTracks_Get() {
-	track := model.Track{ID: 7, Title: "Example Track"}
 	tests := []struct {
 		name string
 
@@ -31,12 +37,12 @@ func (t *APITest) TestTracks_Get() {
 			if id, err := strconv.Atoi(test.id); err == nil {
 				t.store.EXPECT().
 					TrackByID(mock.Anything, id).
-					Return(&track, test.storeErr)
+					Return(&sampleTrack, test.storeErr)
 			}
 
 			e := t.expect.GET("/{id}", test.id)
 			if strings.HasPrefix(test.name, "ok") {
-				e = e.WithMatcher(isDataResponse("trackData", test.status, &track))
+				e = e.WithMatcher(isDataResponse("TrackResource", test.status, &sampleTrack))
 			} else {
 				e = e.WithMatcher(isErrorResponse(test.status))
 			}
@@ -53,14 +59,7 @@ func (t *APITest) TestTracks_GetAll() {
 		storeErr  error
 		status    int
 	}{
-		{"ok_200",
-			[]model.Track{
-				{ID: 7, Title: "Example Track #1"},
-				{ID: 2, Title: "Example Track #2"},
-			},
-			nil,
-			http.StatusOK,
-		},
+		{"ok_200", []model.Track{sampleTrack, sampleTrack}, nil, http.StatusOK},
 		{"ok_200_empty", []model.Track{}, nil, http.StatusOK},
 
 		{"500_storage_fail", nil, errors.New(""), http.StatusInternalServerError},
@@ -74,7 +73,7 @@ func (t *APITest) TestTracks_GetAll() {
 
 			e := t.expect.GET("/")
 			if strings.HasPrefix(test.name, "ok") {
-				e = e.WithMatcher(isDataResponse("tracksData", test.status, test.storeData))
+				e = e.WithMatcher(isDataResponse("TracksResource", test.status, test.storeData))
 			} else {
 				e = e.WithMatcher(isErrorResponse(test.status))
 			}
@@ -84,11 +83,12 @@ func (t *APITest) TestTracks_GetAll() {
 }
 
 func (t *APITest) TestTracks_Create() {
-	trackData := struct {
-		Data model.Track `json:"data"`
-	}{
-		Data: model.Track{ID: 7, Title: "Example Track"},
+	var trackData struct {
+		Data struct {
+			Attrs model.TrackAttrs `json:"attributes"`
+		} `json:"data"`
 	}
+	trackData.Data.Attrs = sampleTrack.Attrs
 
 	tests := []struct {
 		name string
@@ -99,29 +99,23 @@ func (t *APITest) TestTracks_Create() {
 		location  string
 		status    int
 	}{
-		{"ok_201",
-			&trackData.Data,
-			nil,
-			&trackData,
-			"/api/tracks/7",
-			http.StatusCreated,
-		},
+		{"ok_201", &sampleTrack, nil, &trackData, "/api/tracks/7", http.StatusCreated},
 
 		{"fail_400_bad_request", nil, nil, "{}", "", http.StatusBadRequest},
-		{"fail_500_storage_fail", &trackData.Data, errors.New(""), &trackData, "", http.StatusInternalServerError},
+		{"fail_500_storage_fail", &sampleTrack, errors.New(""), &trackData, "", http.StatusInternalServerError},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func() {
-			if test.storeData != nil {
+			if test.storeData != nil || test.storeErr != nil {
 				t.store.EXPECT().
-					CreateTrack(mock.Anything, test.storeData).
-					Return(test.storeErr)
+					CreateTrack(mock.Anything, mock.Anything).
+					Return(test.storeData, test.storeErr)
 			}
 
 			e := t.expect.POST("/")
 			if strings.HasPrefix(test.name, "ok") {
-				e = e.WithMatcher(isDataResponse("trackData", test.status, test.storeData))
+				e = e.WithMatcher(isDataResponse("TrackResource", test.status, test.storeData))
 			} else {
 				e = e.WithMatcher(isErrorResponse(test.status))
 			}

@@ -58,9 +58,9 @@ func accepts(mediaType string) func(http.Handler) http.Handler {
 				return
 			}
 
-			details := fmt.Sprintf("the only acceptable media type is '%s'", mediaType)
+			details := fmt.Sprintf("The only acceptable media type is '%s'", mediaType)
 			encodeError(w, &apiError{
-				Title:  "media type is not acceptable",
+				Title:  "Media type is not acceptable",
 				Detail: details,
 				Status: http.StatusNotAcceptable,
 				Source: &errorSource{
@@ -129,9 +129,9 @@ func hasContentType(mediaType string) func(http.Handler) http.Handler {
 				w.Header().Set(h, mediaType)
 			}
 
-			details := fmt.Sprintf("unexpected content type '%s', only '%s' is allowed", contentType, mediaType)
+			details := fmt.Sprintf("Unexpected content type '%s', only '%s' is allowed", contentType, mediaType)
 			encodeError(w, &apiError{
-				Title:  "media type is unsupported",
+				Title:  "Media type is unsupported",
 				Detail: details,
 				Status: http.StatusUnsupportedMediaType,
 				Source: &errorSource{

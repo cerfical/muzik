@@ -19,9 +19,8 @@ paths:
           name: id
           schema: { type: integer }
           required: true
-          example: 2
       responses:
-        "200": { $ref: "#/components/responses/TrackData" }
+        "200": { $ref: "#/components/responses/TrackResource" }
         "404": { $ref: "#/components/responses/NotFound" }
         default: { $ref: "#/components/responses/InternalError" }
   /tracks/:
@@ -29,7 +28,7 @@ paths:
       summary: Returns a list of all tracks
       tags: [Tracks]
       responses:
-        "200": { $ref: "#/components/responses/TracksData" }
+        "200": { $ref: "#/components/responses/TracksResource" }
         default: { $ref: "#/components/responses/InternalError" }
     post:
       summary: Creates a new track
@@ -38,68 +37,42 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/TrackData" }
-            example:
-              data:
-                title: Track Title
+            schema: { $ref: "#/components/schemas/NewTrackResource" }
       responses:
-        "201": { $ref: "#/components/responses/TrackData" }
+        "201": { $ref: "#/components/responses/TrackResource" }
         "400": { $ref: "#/components/responses/BadRequest" }
         default: { $ref: "#/components/responses/InternalError" }
 components:
   responses:
-    TrackData:
+    TrackResource:
       description: OK
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/TrackData" }
-          example:
-            data:
-              id: "94"
-              title: New Year
-    TracksData:
+          schema: { $ref: "#/components/schemas/TrackResource" }
+    TracksResource:
       description: OK
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/TracksData" }
-          example:
-            data:
-              - id: "4"
-                title: Old
-              - id: "9"
-                title: Help
+          schema: { $ref: "#/components/schemas/TracksResource" }
     BadRequest:
       description: Request is ill-formed
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
-          example:
-            error:
-              status: "400"
-              title: Bad request
-              detail: Request body is malformed
     NotFound:
       description: Referencing a non-existent resource
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
-          example:
-            error:
-              status: "404"
-              title: Track not found
-              detail: Track with ID 1 does not exist
     InternalError:
       description: Reports an internal server failure
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
-          example:
-            error:
-              status: "500"
-              title: Internal server error
-              detail: Storage failure
   schemas:
-    Track: { $ref: "models.json#/$def/track" }
-    TrackData: { $ref: "models.json#/$def/trackData" }
-    TracksData: { $ref: "models.json#/$def/tracksData" }
-    Error: { $ref: "models.json#/$def/error" }
+    Track: { $ref: "models.json#/$def/Track" }
+    TrackInfo: { $ref: "models.json#/$def/TrackInfo" }
+    NewTrackResource: { $ref: "models.json#/$def/NewTrackResource" }
+    TrackResource: { $ref: "models.json#/$def/TrackResource" }
+    TracksResource: { $ref: "models.json#/$def/TracksResource" }
+    Error: { $ref: "models.json#/$def/Error" }

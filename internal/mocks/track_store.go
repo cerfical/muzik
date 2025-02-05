@@ -126,21 +126,33 @@ func (_c *TrackStore_Close_Call) RunAndReturn(run func() error) *TrackStore_Clos
 }
 
 // CreateTrack provides a mock function with given fields: _a0, _a1
-func (_m *TrackStore) CreateTrack(_a0 context.Context, _a1 *model.Track) error {
+func (_m *TrackStore) CreateTrack(_a0 context.Context, _a1 *model.TrackAttrs) (*model.Track, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateTrack")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Track) error); ok {
+	var r0 *model.Track
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.TrackAttrs) (*model.Track, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *model.TrackAttrs) *model.Track); ok {
 		r0 = rf(_a0, _a1)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Track)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, *model.TrackAttrs) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // TrackStore_CreateTrack_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateTrack'
@@ -150,24 +162,24 @@ type TrackStore_CreateTrack_Call struct {
 
 // CreateTrack is a helper method to define mock.On call
 //   - _a0 context.Context
-//   - _a1 *model.Track
+//   - _a1 *model.TrackAttrs
 func (_e *TrackStore_Expecter) CreateTrack(_a0 interface{}, _a1 interface{}) *TrackStore_CreateTrack_Call {
 	return &TrackStore_CreateTrack_Call{Call: _e.mock.On("CreateTrack", _a0, _a1)}
 }
 
-func (_c *TrackStore_CreateTrack_Call) Run(run func(_a0 context.Context, _a1 *model.Track)) *TrackStore_CreateTrack_Call {
+func (_c *TrackStore_CreateTrack_Call) Run(run func(_a0 context.Context, _a1 *model.TrackAttrs)) *TrackStore_CreateTrack_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*model.Track))
+		run(args[0].(context.Context), args[1].(*model.TrackAttrs))
 	})
 	return _c
 }
 
-func (_c *TrackStore_CreateTrack_Call) Return(_a0 error) *TrackStore_CreateTrack_Call {
-	_c.Call.Return(_a0)
+func (_c *TrackStore_CreateTrack_Call) Return(_a0 *model.Track, _a1 error) *TrackStore_CreateTrack_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *TrackStore_CreateTrack_Call) RunAndReturn(run func(context.Context, *model.Track) error) *TrackStore_CreateTrack_Call {
+func (_c *TrackStore_CreateTrack_Call) RunAndReturn(run func(context.Context, *model.TrackAttrs) (*model.Track, error)) *TrackStore_CreateTrack_Call {
 	_c.Call.Return(run)
 	return _c
 }

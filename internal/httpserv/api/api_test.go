@@ -67,7 +67,7 @@ func (t *APITest) TestContentTypeHeaderCheck() {
 					IsEqual("application/json")
 
 				e.JSON().
-					Path("$.error.source.header").
+					Path("$.errors[0].source.header").
 					IsEqual("Content-Type")
 			}
 		})
@@ -105,7 +105,7 @@ func (t *APITest) TestAcceptHeaderCheck() {
 				e.WithMatcher(isErrorResponse(http.StatusNotAcceptable)).
 					Expect().
 					JSON().
-					Path("$.error.source.header").
+					Path("$.errors[0].source.header").
 					IsEqual("Accept")
 			}
 		})
@@ -148,10 +148,10 @@ func isErrorResponse(status int) func(*httpexpect.Response) {
 	return func(r *httpexpect.Response) {
 		obj := r.Status(status).
 			JSON().
-			Schema(modelRef("error")).
+			Schema(modelRef("Error")).
 			Object()
 
-		obj.Path("$.error.status").
+		obj.Path("$.errors[0].status").
 			IsEqual(strconv.Itoa(status))
 	}
 }

@@ -7,8 +7,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/cerfical/muzik/internal/strutil"
 )
 
 const encodeMediaType = "application/json"
@@ -30,7 +28,9 @@ func decodeData[T any](r io.Reader) (T, error) {
 
 	var empty T
 	var request struct {
-		Data T `json:"data"`
+		Data struct {
+			Attrs T `json:"attributes"`
+		} `json:"data"`
 	}
 
 	if err := dec.Decode(&request); err != nil {
@@ -44,7 +44,7 @@ func decodeData[T any](r io.Reader) (T, error) {
 		return empty, &parseError{"request body must contain a single JSON object"}
 	}
 
-	return request.Data, nil
+	return request.Data.Attrs, nil
 }
 
 func describeError(err error) (string, bool) {
@@ -106,13 +106,10 @@ func encodeData[T any](w http.ResponseWriter, data T, status int) error {
 
 func encodeError(w http.ResponseWriter, e *apiError) error {
 	response := struct {
-		Error *apiError `json:"error"`
+		Errors []*apiError `json:"errors"`
 	}{
-		Error: e,
+		Errors: []*apiError{e},
 	}
-
-	response.Error.Title = strutil.Capitalize(response.Error.Title)
-	response.Error.Detail = strutil.Capitalize(response.Error.Detail)
 
 	return encodeJSON(w, &response, e.Status)
 }

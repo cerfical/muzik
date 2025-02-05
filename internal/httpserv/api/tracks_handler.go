@@ -49,13 +49,14 @@ func (h *tracksHandler) getAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *tracksHandler) create(w http.ResponseWriter, r *http.Request) {
-	track, err := decodeData[*model.Track](r.Body)
+	trackAttrs, err := decodeData[*model.TrackAttrs](r.Body)
 	if err != nil {
 		badRequest(err)(w, r)
 		return
 	}
 
-	if err := h.store.CreateTrack(r.Context(), track); err != nil {
+	track, err := h.store.CreateTrack(r.Context(), trackAttrs)
+	if err != nil {
 		h.log.Error("failed to save track data to storage", err)
 		internalError(w, r)
 		return

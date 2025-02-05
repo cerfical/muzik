@@ -1,78 +1,91 @@
 {
     "$def": {
-        "trackData": {
-            "description": "Describes a single track resource as returned by server",
+        "TrackResource": {
+            "description": "Describes the structure of successful responses to GET requests asking for a single track",
             "type": "object",
             "properties": {
-                "data": { "$ref": "#/$def/track" }
+                "data": { "$ref": "#/$def/Track" }
             },
             "required": [ "data" ],
             "additionalProperties": false
         },
-        "tracksData": {
-            "description": "Describes a collection of track resources as returned by server",
+        "TracksResource": {
+            "description": "Describes the structure of successful responses to GET requests asking for a collection of tracks",
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
-                    "items": { "$ref": "#/$def/track" }
+                    "items": { "$ref": "#/$def/Track" }
                 }
             },
             "required": [ "data" ],
             "additionalProperties": false
         },
-        "track": {
+        "NewTrackResource": {
+            "description": "Describes the structure of POST requests for creating new tracks",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "attributes": { "$ref": "#/$def/TrackInfo" }
+                    },
+                    "required": [ "attributes" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "data" ],
+            "additionalProperties": false
+        },
+        "Track": {
             "description": "Defines the data model for music tracks",
             "type": "object",
             "properties": {
                 "id": {
                     "type": "string",
-                    "example": "2"
+                    "readOnly": true
                 },
-                "title": {
-                    "type": "string",
-                    "example": "Waterloo"
-                }
+                "attributes": { "$ref": "#/$def/TrackInfo" }
+            },
+            "required": [ "id", "attributes" ],
+            "additionalProperties": false
+        },
+        "TrackInfo": {
+            "description": "Contains information about a single music track",
+            "type": "object",
+            "properties": {
+                "title": { "type": "string" }
             },
             "required": [ "title" ],
             "additionalProperties": false
         },
-        "error": {
+        "Error": {
             "description": "Defines the structure of error responses as returned by server",
             "type": "object",
             "properties": {
-                "error": {
-                    "type": "object",
-                    "properties": {
-                        "status": {
-                            "type": "string",
-                            "example": "400"
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "status": { "type": "string" },
+                            "title": { "type": "string" },
+                            "detail": { "type": "string" },
+                            "source": {
+                                "type": "object",
+                                "properties": {
+                                    "header": { "type": "string" }
+                                },
+                                "required": [ "header" ],
+                                "additionalProperties": false
+                            }
                         },
-                        "title": {
-                            "type": "string",
-                            "example": "Bad request"
-                        },
-                        "detail": {
-                            "type": "string",
-                            "example": "Syntax error at position 1"
-                        },
-                        "source": {
-                            "type": "object",
-                            "properties": {
-                                "header": {
-                                    "type": "string",
-                                    "example": "Content-Type"
-                                }
-                            },
-                            "required": [ "header" ],
-                            "additionalProperties": false
-                        }
-                    },
-                    "required": [ "status", "title" ],
-                    "additionalProperties": false
+                        "required": [ "status", "title" ],
+                        "additionalProperties": false
+                    }
                 }
             },
-            "required": [ "error" ],
+            "required": [ "errors" ],
             "additionalProperties": false
         }
     }
