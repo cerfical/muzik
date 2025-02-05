@@ -1,6 +1,6 @@
-package config
+package postgres
 
-type DB struct {
+type Config struct {
 	Addr     string
 	User     string
 	Password string

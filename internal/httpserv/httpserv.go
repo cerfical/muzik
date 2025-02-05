@@ -1,12 +1,10 @@
 package httpserv
 
 import (
-	stdlog "log"
-
 	"context"
 	"errors"
+	stdlog "log"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -16,6 +14,9 @@ import (
 func Run(config *Config, h http.Handler, log *log.Logger) error {
 	log.WithFields("addr", config.Addr).Info("starting up the server")
 
+	sigCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	serv := http.Server{
 		Addr: config.Addr,
 		// Log requests before any routing logic applies
@@ -23,13 +24,7 @@ func Run(config *Config, h http.Handler, log *log.Logger) error {
 		ErrorLog: stdlog.New(&httpErrorLog{log}, "", 0),
 	}
 
-	// Graceful shutdown
-	sigChan := make(chan os.Signal, 1)
 	errChan := make(chan error)
-
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(sigChan)
-
 	go func() {
 		if err := serv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
@@ -37,7 +32,7 @@ func Run(config *Config, h http.Handler, log *log.Logger) error {
 	}()
 
 	select {
-	case <-sigChan:
+	case <-sigCtx.Done():
 		// The server stopped due to a system signal, perform graceful shutdown
 	case err := <-errChan:
 		// The server was terminated abnormally

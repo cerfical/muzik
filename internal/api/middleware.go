@@ -9,7 +9,6 @@ import (
 
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/strutil"
-
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )

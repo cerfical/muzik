@@ -6,6 +6,7 @@ import (
 
 	"github.com/cerfical/muzik/internal/httpserv"
 	"github.com/cerfical/muzik/internal/log"
+	"github.com/cerfical/muzik/internal/postgres"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 )
@@ -39,6 +40,10 @@ func load(v *viper.Viper) (*Config, error) {
 	v.SetDefault("log.level", log.LevelInfo)
 	v.SetDefault("server.addr", "localhost:8080")
 
+	v.SetDefault("db.addr", "localhost:5432")
+	v.SetDefault("db.name", "postgres")
+	v.SetDefault("db.user", "postgres")
+
 	var cfg Config
 	if err := v.Unmarshal(&cfg, viper.DecodeHook(mapstructure.TextUnmarshallerHookFunc())); err != nil {
 		return nil, err
@@ -48,7 +53,7 @@ func load(v *viper.Viper) (*Config, error) {
 
 type Config struct {
 	Server httpserv.Config
-	DB     DB
+	DB     postgres.Config
 	Log    struct {
 		Level log.Level
 	}

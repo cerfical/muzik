@@ -1,18 +1,17 @@
 package postgres
 
 import (
-	"cmp"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
-	"github.com/cerfical/muzik/internal/config"
 	"github.com/cerfical/muzik/internal/model"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func OpenTrackStore(cfg *config.DB) (model.TrackStore, error) {
+func OpenTrackStore(cfg *Config) (model.TrackStore, error) {
 	connStr, err := makeConnString(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
@@ -35,36 +34,32 @@ func OpenTrackStore(cfg *config.DB) (model.TrackStore, error) {
 	return &TrackStore{db}, nil
 }
 
-func makeConnString(cfg *config.DB) (string, error) {
+func makeConnString(cfg *Config) (string, error) {
 	host, port, err := net.SplitHostPort(cfg.Addr)
 	if cfg.Addr != "" && err != nil {
 		return "", err
 	}
 
-	// Set up defaults typically used by Postgres
 	c := []struct {
 		key, val string
 	}{
-		{"host", cmp.Or(host, "localhost")},
-		{"port", cmp.Or(port, "5432")},
-		{"user", cmp.Or(cfg.User, "postgres")},
+		{"host", host},
+		{"port", port},
+		{"user", cfg.User},
 		{"password", cfg.Password},
-		{"database", cmp.Or(cfg.Name, "postgres")},
+		{"database", cfg.Name},
 		{"sslmode", "disable"},
 	}
 
-	var connStr string
+	var options []string
 	for _, cc := range c {
 		if cc.val == "" {
 			continue
 		}
-
-		// Separate settings with spaces
-		if connStr != "" {
-			connStr += " "
-		}
-		connStr += fmt.Sprintf("%v='%v'", cc.key, cc.val)
+		options = append(options, fmt.Sprintf("%v='%v'", cc.key, cc.val))
 	}
+
+	connStr := strings.Join(options, " ")
 	return connStr, nil
 }
 
