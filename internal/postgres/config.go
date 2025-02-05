@@ -1,8 +1,14 @@
 package postgres
 
+import "time"
+
 type Config struct {
-	Addr     string
+	Addr string
+	Name string
+
 	User     string
 	Password string
-	Name     string
+
+	Timeout     time.Duration
+	IdleTimeout time.Duration
 }

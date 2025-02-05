@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/cerfical/muzik/internal/log"
 )
@@ -15,11 +16,17 @@ func New(config *Config, h http.Handler, log *log.Logger) *Server {
 	return &Server{
 		serv: http.Server{
 			Addr: config.Addr,
+
 			// Log requests before any routing logic applies
 			Handler:  logRequest(log)(h),
 			ErrorLog: stdlog.New(&httpErrorLog{log}, "", 0),
+
+			ReadTimeout:  config.Timeout,
+			WriteTimeout: config.Timeout,
+			IdleTimeout:  config.IdleTimeout,
 		},
-		log: log,
+		log:     log,
+		timeout: config.Timeout,
 	}
 }
 
@@ -40,8 +47,9 @@ func (w *httpErrorLog) Write(p []byte) (int, error) {
 }
 
 type Server struct {
-	serv http.Server
-	log  *log.Logger
+	serv    http.Server
+	log     *log.Logger
+	timeout time.Duration
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -65,9 +73,16 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 
+	timedCtx := ctx
+	if s.timeout > 0 {
+		var cancel context.CancelFunc
+		timedCtx, cancel = context.WithTimeout(timedCtx, s.timeout)
+		defer cancel()
+	}
+
 	// Try to shutdown the server cleanly and if that fails, close the server
 	s.log.Info("shutting down the server")
-	if err := s.serv.Shutdown(ctx); err != nil {
+	if err := s.serv.Shutdown(timedCtx); err != nil {
 		s.log.Error("error shutting down the server", err)
 		s.serv.Close()
 		return err

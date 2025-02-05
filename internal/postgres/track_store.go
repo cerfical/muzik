@@ -1,11 +1,13 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/cerfical/muzik/internal/model"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -21,6 +23,7 @@ func OpenTrackStore(cfg *Config) (model.TrackStore, error) {
 	if err != nil {
 		return nil, err
 	}
+	db.SetConnMaxIdleTime(cfg.IdleTimeout)
 
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS tracks(
@@ -31,7 +34,7 @@ func OpenTrackStore(cfg *Config) (model.TrackStore, error) {
 		return nil, err
 	}
 
-	return &TrackStore{db}, nil
+	return &TrackStore{db, cfg.Timeout}, nil
 }
 
 func makeConnString(cfg *Config) (string, error) {
@@ -64,61 +67,70 @@ func makeConnString(cfg *Config) (string, error) {
 }
 
 type TrackStore struct {
-	db *sql.DB
+	db      *sql.DB
+	timeout time.Duration
 }
 
 func (s *TrackStore) CreateTrack(track *model.Track) error {
-	row := s.db.QueryRow("INSERT INTO tracks(title) VALUES($1) RETURNING id", track.Title)
-	return row.Scan(&track.ID)
+	return s.withTimeout(func(ctx context.Context) error {
+		row := s.db.QueryRowContext(ctx, "INSERT INTO tracks(title) VALUES($1) RETURNING id", track.Title)
+		return row.Scan(&track.ID)
+	})
 }
 
 func (s *TrackStore) TrackByID(id int) (*model.Track, error) {
-	row := s.db.QueryRow("SELECT id, title FROM tracks WHERE id=$1", id)
-
 	var track model.Track
-	if err := row.Scan(&track.ID, &track.Title); err != nil {
+	err := s.withTimeout(func(ctx context.Context) error {
+		row := s.db.QueryRowContext(ctx, "SELECT id, title FROM tracks WHERE id=$1", id)
+		return row.Scan(&track.ID, &track.Title)
+	})
+
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, model.ErrNotFound
 		}
 		return nil, err
 	}
+
 	return &track, nil
 }
 
 func (s *TrackStore) AllTracks() ([]model.Track, error) {
-	rows, err := s.db.Query("SELECT id, title FROM tracks")
-	if err != nil {
-		return nil, err
-	}
-
-	// Return the empty collection as a slice of size 0, not as nil
-	tracks := make([]model.Track, 0)
-
-	for rows.Next() {
-		var track model.Track
-		err = rows.Scan(&track.ID, &track.Title)
+	var tracks []model.Track
+	err := s.withTimeout(func(ctx context.Context) (err error) {
+		rows, err := s.db.QueryContext(ctx, "SELECT id, title FROM tracks")
 		if err != nil {
-			break
+			return err
 		}
-		tracks = append(tracks, track)
+
+		defer func() {
+			if closeErr := rows.Close(); closeErr != nil && err == nil {
+				err = closeErr
+			}
+		}()
+
+		for rows.Next() {
+			var track model.Track
+			if err = rows.Scan(&track.ID, &track.Title); err != nil {
+				return err
+			}
+			tracks = append(tracks, track)
+		}
+		return rows.Err()
+	})
+
+	return tracks, err
+}
+
+func (s *TrackStore) withTimeout(f func(ctx context.Context) error) error {
+	timedCtx := context.Background()
+	if s.timeout > 0 {
+		var cancel context.CancelFunc
+		timedCtx, cancel = context.WithTimeout(timedCtx, s.timeout)
+		defer cancel()
 	}
 
-	// Check for close errors
-	if closeErr := rows.Close(); closeErr != nil {
-		return nil, closeErr
-	}
-
-	// Check for scan errors
-	if err != nil {
-		return nil, err
-	}
-
-	// Check for iteration errors
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return tracks, nil
+	return f(timedCtx)
 }
 
 func (s *TrackStore) Close() error {
