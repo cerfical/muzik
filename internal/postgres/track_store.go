@@ -71,16 +71,16 @@ type TrackStore struct {
 	timeout time.Duration
 }
 
-func (s *TrackStore) CreateTrack(track *model.Track) error {
-	return s.withTimeout(func(ctx context.Context) error {
+func (s *TrackStore) CreateTrack(ctx context.Context, track *model.Track) error {
+	return s.withTimeout(ctx, func(ctx context.Context) error {
 		row := s.db.QueryRowContext(ctx, "INSERT INTO tracks(title) VALUES($1) RETURNING id", track.Title)
 		return row.Scan(&track.ID)
 	})
 }
 
-func (s *TrackStore) TrackByID(id int) (*model.Track, error) {
+func (s *TrackStore) TrackByID(ctx context.Context, id int) (*model.Track, error) {
 	var track model.Track
-	err := s.withTimeout(func(ctx context.Context) error {
+	err := s.withTimeout(ctx, func(ctx context.Context) error {
 		row := s.db.QueryRowContext(ctx, "SELECT id, title FROM tracks WHERE id=$1", id)
 		return row.Scan(&track.ID, &track.Title)
 	})
@@ -95,9 +95,9 @@ func (s *TrackStore) TrackByID(id int) (*model.Track, error) {
 	return &track, nil
 }
 
-func (s *TrackStore) AllTracks() ([]model.Track, error) {
+func (s *TrackStore) AllTracks(ctx context.Context) ([]model.Track, error) {
 	var tracks []model.Track
-	err := s.withTimeout(func(ctx context.Context) (err error) {
+	err := s.withTimeout(ctx, func(ctx context.Context) (err error) {
 		rows, err := s.db.QueryContext(ctx, "SELECT id, title FROM tracks")
 		if err != nil {
 			return err
@@ -122,8 +122,8 @@ func (s *TrackStore) AllTracks() ([]model.Track, error) {
 	return tracks, err
 }
 
-func (s *TrackStore) withTimeout(f func(ctx context.Context) error) error {
-	timedCtx := context.Background()
+func (s *TrackStore) withTimeout(ctx context.Context, f func(ctx context.Context) error) error {
+	timedCtx := ctx
 	if s.timeout > 0 {
 		var cancel context.CancelFunc
 		timedCtx, cancel = context.WithTimeout(timedCtx, s.timeout)

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cerfical/muzik/internal/model"
+	"github.com/stretchr/testify/mock"
 )
 
 func (t *APITest) TestTracks_Get() {
@@ -29,7 +30,7 @@ func (t *APITest) TestTracks_Get() {
 		t.Run(test.name, func() {
 			if id, err := strconv.Atoi(test.id); err == nil {
 				t.store.EXPECT().
-					TrackByID(id).
+					TrackByID(mock.Anything, id).
 					Return(&track, test.storeErr)
 			}
 
@@ -68,7 +69,7 @@ func (t *APITest) TestTracks_GetAll() {
 	for _, test := range tests {
 		t.Run(test.name, func() {
 			t.store.EXPECT().
-				AllTracks().
+				AllTracks(mock.Anything).
 				Return(test.storeData, test.storeErr)
 
 			e := t.expect.GET("/")
@@ -114,7 +115,7 @@ func (t *APITest) TestTracks_Create() {
 		t.Run(test.name, func() {
 			if test.storeData != nil {
 				t.store.EXPECT().
-					CreateTrack(test.storeData).
+					CreateTrack(mock.Anything, test.storeData).
 					Return(test.storeErr)
 			}
 

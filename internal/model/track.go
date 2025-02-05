@@ -1,6 +1,9 @@
 package model
 
-import "io"
+import (
+	"context"
+	"io"
+)
 
 type Track struct {
 	ID    int    `json:"id,string"`
@@ -10,7 +13,7 @@ type Track struct {
 type TrackStore interface {
 	io.Closer
 
-	CreateTrack(*Track) error
-	TrackByID(int) (*Track, error)
-	AllTracks() ([]Track, error)
+	CreateTrack(context.Context, *Track) error
+	TrackByID(context.Context, int) (*Track, error)
+	AllTracks(context.Context) ([]Track, error)
 }

@@ -21,7 +21,7 @@ func (h *tracksHandler) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	track, err := h.store.TrackByID(id)
+	track, err := h.store.TrackByID(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
 			notFound(w, r)
@@ -38,7 +38,7 @@ func (h *tracksHandler) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *tracksHandler) getAll(w http.ResponseWriter, r *http.Request) {
-	tracks, err := h.store.AllTracks()
+	tracks, err := h.store.AllTracks(r.Context())
 	if err != nil {
 		h.log.Error("failed to retrieve tracks data from storage", err)
 		internalError(w, r)
@@ -55,7 +55,7 @@ func (h *tracksHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.store.CreateTrack(track); err != nil {
+	if err := h.store.CreateTrack(r.Context(), track); err != nil {
 		h.log.Error("failed to save track data to storage", err)
 		internalError(w, r)
 		return
