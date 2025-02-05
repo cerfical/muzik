@@ -9,9 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cerfical/muzik/internal/api"
+	"github.com/cerfical/muzik/internal/httpserv/api"
 	"github.com/cerfical/muzik/internal/mocks"
-
 	"github.com/gavv/httpexpect/v2"
 	"github.com/stretchr/testify/suite"
 )
@@ -34,7 +33,7 @@ func (t *APITest) SetupSubTest() {
 		BaseURL:  "/api/tracks",
 		Reporter: httpexpect.NewAssertReporter(t.T()),
 		Client: &http.Client{
-			Transport: httpexpect.NewBinder(api.New(t.store, nil)),
+			Transport: httpexpect.NewBinder(api.NewHandler(t.store, nil)),
 		},
 	})
 }
@@ -168,7 +167,7 @@ func isDataResponse(model string, status int, data any) func(*httpexpect.Respons
 }
 
 func modelRef(model string) string {
-	p, err := filepath.Abs("../../api/models.json")
+	p, err := filepath.Abs("../../../api/models.json")
 	if err != nil {
 		panic(err)
 	}

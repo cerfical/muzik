@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -21,7 +22,8 @@ func main() {
 		http.ServeFile(w, r, "static/index.html")
 	})
 
-	if err := httpserv.Run(&config.Server, index, log); err != nil {
+	server := httpserv.New(&config.Server, index, log)
+	if err := server.Run(context.Background()); err != nil {
 		log.Error("the server terminated abnormally", err)
 	}
 }

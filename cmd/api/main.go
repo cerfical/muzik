@@ -1,11 +1,11 @@
 package main
 
 import (
+	"context"
 	"os"
 
-	"github.com/cerfical/muzik/internal/api"
 	"github.com/cerfical/muzik/internal/config"
-	"github.com/cerfical/muzik/internal/httpserv"
+	"github.com/cerfical/muzik/internal/httpserv/api"
 	"github.com/cerfical/muzik/internal/log"
 	"github.com/cerfical/muzik/internal/postgres"
 )
@@ -36,7 +36,8 @@ func main() {
 		}
 	}()
 
-	if err := httpserv.Run(&config.Server, api.New(store, log), log); err != nil {
+	server := api.NewServer(&config.Server, store, log)
+	if err := server.Run(context.Background()); err != nil {
 		log.Error("the server terminated abnormally", err)
 	}
 }
