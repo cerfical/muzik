@@ -12,12 +12,9 @@ import (
 
 func main() {
 	config := config.MustLoad(os.Args)
-	index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "static/index.html")
-	})
-
 	log := log.New().WithLevel(config.Log.Level)
-	server := httpserv.New(&config.Server, index, log)
+
+	server := httpserv.New(&config.Server, http.FileServer(http.Dir("static")), log)
 	if err := server.Run(context.Background()); err != nil {
 		log.Error("The server has terminated abnormally", err)
 	}
