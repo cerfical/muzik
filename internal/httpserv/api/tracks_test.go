@@ -1,129 +1,149 @@
 package api_test
 
 import (
-	"errors"
 	"net/http"
-	"strconv"
-	"strings"
+	"testing"
 
+	"github.com/cerfical/muzik/internal/httpserv/api"
+	"github.com/cerfical/muzik/internal/mocks"
 	"github.com/cerfical/muzik/internal/model"
+	"github.com/gavv/httpexpect/v2"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
-var sampleTrack = model.Track{
-	ID: 7,
-	Attrs: model.TrackAttrs{
-		Title: "Example Track",
+var sampleTracks = []model.Track{
+	{
+		ID: 1,
+		Attrs: model.TrackAttrs{
+			Title: "Example Track #1",
+		},
+	},
+	{
+		ID: 2,
+		Attrs: model.TrackAttrs{
+			Title: "Example Track #2",
+		},
 	},
 }
 
-func (t *APITest) TestTracks_Get() {
-	tests := []struct {
-		name string
-
-		id       string
-		storeErr error
-		status   int
-	}{
-		{"ok_200", "7", nil, http.StatusOK},
-
-		{"fail_404_not_found", "7", model.ErrNotFound, http.StatusNotFound},
-		{"fail_404_invalid_id", "abcd-efgh", nil, http.StatusNotFound},
-		{"fail_500_storage_fail", "7", errors.New(""), http.StatusInternalServerError},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func() {
-			if id, err := strconv.Atoi(test.id); err == nil {
-				t.store.EXPECT().
-					TrackByID(mock.Anything, id).
-					Return(&sampleTrack, test.storeErr)
-			}
-
-			e := t.expect.GET("/{id}", test.id)
-			if strings.HasPrefix(test.name, "ok") {
-				e = e.WithMatcher(isDataResponse("TrackResource", test.status, &sampleTrack))
-			} else {
-				e = e.WithMatcher(isErrorResponse(test.status))
-			}
-			e.Expect()
-		})
-	}
+func TestTracks(t *testing.T) {
+	suite.Run(t, new(TracksTest))
 }
 
-func (t *APITest) TestTracks_GetAll() {
-	tests := []struct {
-		name string
+type TracksTest struct {
+	suite.Suite
 
-		storeData []model.Track
-		storeErr  error
-		status    int
-	}{
-		{"ok_200", []model.Track{sampleTrack, sampleTrack}, nil, http.StatusOK},
-		{"ok_200_empty", []model.Track{}, nil, http.StatusOK},
-
-		{"500_storage_fail", nil, errors.New(""), http.StatusInternalServerError},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func() {
-			t.store.EXPECT().
-				AllTracks(mock.Anything).
-				Return(test.storeData, test.storeErr)
-
-			e := t.expect.GET("/")
-			if strings.HasPrefix(test.name, "ok") {
-				e = e.WithMatcher(isDataResponse("TracksResource", test.status, test.storeData))
-			} else {
-				e = e.WithMatcher(isErrorResponse(test.status))
-			}
-			e.Expect()
-		})
-	}
+	store  *mocks.TrackStore
+	expect *httpexpect.Expect
 }
 
-func (t *APITest) TestTracks_Create() {
-	var trackData struct {
+func (t *TracksTest) SetupTest() {
+	t.store = mocks.NewTrackStore(t.T())
+	t.expect = httpexpect.WithConfig(httpexpect.Config{
+		TestName: t.T().Name(),
+		BaseURL:  "/api/tracks",
+		Reporter: httpexpect.NewAssertReporter(t.T()),
+		Client: &http.Client{
+			Transport: httpexpect.NewBinder(api.NewHandler(t.store, nil)),
+		},
+	})
+}
+
+func (t *TracksTest) TestTracks_Get_Ok() {
+	var response struct {
+		Data model.Track `json:"data"`
+	}
+	response.Data = sampleTracks[0]
+
+	t.store.EXPECT().
+		TrackByID(mock.Anything, 1).
+		Return(&sampleTracks[0], nil)
+
+	t.expect.GET("/1").
+		Expect().
+		Status(http.StatusOK).
+		JSON().
+		Schema(trackDataResponseSchema()).
+		IsEqual(&response)
+}
+
+func (t *TracksTest) TestTracks_Get_NotFound() {
+	t.store.EXPECT().
+		TrackByID(mock.Anything, 3).
+		Return(nil, model.ErrNotFound)
+
+	t.expect.GET("/3").
+		Expect().
+		Status(http.StatusNotFound).
+		JSON().
+		Schema(errorSchema())
+}
+
+func (t *TracksTest) TestTracks_GetAll_Ok() {
+	var response struct {
+		Data []model.Track `json:"data"`
+	}
+	response.Data = sampleTracks
+
+	t.store.EXPECT().
+		AllTracks(mock.Anything).
+		Return(sampleTracks, nil)
+
+	t.expect.GET("/").
+		Expect().
+		Status(http.StatusOK).
+		JSON().
+		Schema(tracksDataResponseSchema()).
+		IsEqual(&response)
+}
+
+func (t *TracksTest) TestTracks_Create_Created() {
+	var request struct {
 		Data struct {
 			Attrs model.TrackAttrs `json:"attributes"`
 		} `json:"data"`
 	}
-	trackData.Data.Attrs = sampleTrack.Attrs
+	request.Data.Attrs = sampleTracks[0].Attrs
 
-	tests := []struct {
-		name string
-
-		storeData *model.Track
-		storeErr  error
-		body      any
-		location  string
-		status    int
-	}{
-		{"ok_201", &sampleTrack, nil, &trackData, "/api/tracks/7", http.StatusCreated},
-
-		{"fail_400_bad_request", nil, nil, "{}", "", http.StatusBadRequest},
-		{"fail_500_storage_fail", &sampleTrack, errors.New(""), &trackData, "", http.StatusInternalServerError},
+	var response struct {
+		Data struct {
+			Attrs model.TrackAttrs `json:"attributes"`
+			ID    int              `json:"id,string"`
+		} `json:"data"`
 	}
+	response.Data.Attrs = sampleTracks[0].Attrs
+	response.Data.ID = sampleTracks[0].ID
 
-	for _, test := range tests {
-		t.Run(test.name, func() {
-			if test.storeData != nil || test.storeErr != nil {
-				t.store.EXPECT().
-					CreateTrack(mock.Anything, mock.Anything).
-					Return(test.storeData, test.storeErr)
-			}
+	t.store.EXPECT().
+		CreateTrack(mock.Anything, &sampleTracks[0].Attrs).
+		Return(&sampleTracks[0], nil)
 
-			e := t.expect.POST("/")
-			if strings.HasPrefix(test.name, "ok") {
-				e = e.WithMatcher(isDataResponse("TrackResource", test.status, test.storeData))
-			} else {
-				e = e.WithMatcher(isErrorResponse(test.status))
-			}
+	e := t.expect.POST("/").
+		WithJSON(&request).
+		Expect()
 
-			e.WithJSON(test.body).
-				Expect().
-				Header("Location").
-				IsEqual(test.location)
-		})
-	}
+	e.Header("Location").IsEqual("/api/tracks/1")
+	e.Status(http.StatusCreated).
+		JSON().
+		Schema(trackDataResponseSchema()).
+		IsEqual(&response)
+}
+
+func (t *TracksTest) TestTracks_Create_BadRequest() {
+	e := t.expect.POST("/").
+		WithJSON("").
+		Expect()
+
+	e.Status(http.StatusBadRequest).
+		JSON().
+		Schema(errorSchema())
+}
+
+func trackDataResponseSchema() string {
+	return schema("TrackResource")
+}
+
+func tracksDataResponseSchema() string {
+	return schema("TracksResource")
 }
