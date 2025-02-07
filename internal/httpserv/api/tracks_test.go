@@ -57,27 +57,27 @@ func (t *TracksTest) TestTracks_Get_Ok() {
 	response.Data = sampleTracks[0]
 
 	t.store.EXPECT().
-		TrackByID(mock.Anything, 1).
+		GetTrack(mock.Anything, 1).
 		Return(&sampleTracks[0], nil)
 
-	t.expect.GET("/1").
-		Expect().
-		Status(http.StatusOK).
-		JSON().
-		Schema(trackDataResponseSchema()).
+	e := t.expect.GET("/1").
+		Expect()
+
+	e.Status(http.StatusOK)
+	e.JSON().Schema(trackDataResponseSchema()).
 		IsEqual(&response)
 }
 
 func (t *TracksTest) TestTracks_Get_NotFound() {
 	t.store.EXPECT().
-		TrackByID(mock.Anything, 3).
+		GetTrack(mock.Anything, 3).
 		Return(nil, model.ErrNotFound)
 
-	t.expect.GET("/3").
-		Expect().
-		Status(http.StatusNotFound).
-		JSON().
-		Schema(errorSchema())
+	e := t.expect.GET("/3").
+		Expect()
+
+	e.Status(http.StatusNotFound)
+	e.JSON().Schema(errorSchema())
 }
 
 func (t *TracksTest) TestTracks_GetAll_Ok() {
@@ -87,18 +87,18 @@ func (t *TracksTest) TestTracks_GetAll_Ok() {
 	response.Data = sampleTracks
 
 	t.store.EXPECT().
-		AllTracks(mock.Anything).
+		GetTracks(mock.Anything).
 		Return(sampleTracks, nil)
 
-	t.expect.GET("/").
-		Expect().
-		Status(http.StatusOK).
-		JSON().
-		Schema(tracksDataResponseSchema()).
+	e := t.expect.GET("/").
+		Expect()
+
+	e.Status(http.StatusOK)
+	e.JSON().Schema(tracksDataResponseSchema()).
 		IsEqual(&response)
 }
 
-func (t *TracksTest) TestTracks_Create_Created() {
+func (t *TracksTest) TestTracks_Create_Ok() {
 	var request struct {
 		Data struct {
 			Attrs model.TrackAttrs `json:"attributes"`
@@ -123,10 +123,10 @@ func (t *TracksTest) TestTracks_Create_Created() {
 		WithJSON(&request).
 		Expect()
 
-	e.Header("Location").IsEqual("/api/tracks/1")
 	e.Status(http.StatusCreated).
-		JSON().
-		Schema(trackDataResponseSchema()).
+		Header("Location").IsEqual("/api/tracks/1")
+
+	e.JSON().Schema(trackDataResponseSchema()).
 		IsEqual(&response)
 }
 
@@ -135,15 +135,6 @@ func (t *TracksTest) TestTracks_Create_BadRequest() {
 		WithJSON("").
 		Expect()
 
-	e.Status(http.StatusBadRequest).
-		JSON().
-		Schema(errorSchema())
-}
-
-func trackDataResponseSchema() string {
-	return schema("TrackResource")
-}
-
-func tracksDataResponseSchema() string {
-	return schema("TracksResource")
+	e.Status(http.StatusBadRequest)
+	e.JSON().Schema(errorSchema())
 }

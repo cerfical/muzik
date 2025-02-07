@@ -22,64 +22,6 @@ func (_m *TrackStore) EXPECT() *TrackStore_Expecter {
 	return &TrackStore_Expecter{mock: &_m.Mock}
 }
 
-// AllTracks provides a mock function with given fields: _a0
-func (_m *TrackStore) AllTracks(_a0 context.Context) ([]model.Track, error) {
-	ret := _m.Called(_a0)
-
-	if len(ret) == 0 {
-		panic("no return value specified for AllTracks")
-	}
-
-	var r0 []model.Track
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]model.Track, error)); ok {
-		return rf(_a0)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) []model.Track); ok {
-		r0 = rf(_a0)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Track)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(_a0)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// TrackStore_AllTracks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AllTracks'
-type TrackStore_AllTracks_Call struct {
-	*mock.Call
-}
-
-// AllTracks is a helper method to define mock.On call
-//   - _a0 context.Context
-func (_e *TrackStore_Expecter) AllTracks(_a0 interface{}) *TrackStore_AllTracks_Call {
-	return &TrackStore_AllTracks_Call{Call: _e.mock.On("AllTracks", _a0)}
-}
-
-func (_c *TrackStore_AllTracks_Call) Run(run func(_a0 context.Context)) *TrackStore_AllTracks_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *TrackStore_AllTracks_Call) Return(_a0 []model.Track, _a1 error) *TrackStore_AllTracks_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *TrackStore_AllTracks_Call) RunAndReturn(run func(context.Context) ([]model.Track, error)) *TrackStore_AllTracks_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Close provides a mock function with no fields
 func (_m *TrackStore) Close() error {
 	ret := _m.Called()
@@ -184,12 +126,12 @@ func (_c *TrackStore_CreateTrack_Call) RunAndReturn(run func(context.Context, *m
 	return _c
 }
 
-// TrackByID provides a mock function with given fields: _a0, _a1
-func (_m *TrackStore) TrackByID(_a0 context.Context, _a1 int) (*model.Track, error) {
+// GetTrack provides a mock function with given fields: _a0, _a1
+func (_m *TrackStore) GetTrack(_a0 context.Context, _a1 int) (*model.Track, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
-		panic("no return value specified for TrackByID")
+		panic("no return value specified for GetTrack")
 	}
 
 	var r0 *model.Track
@@ -214,31 +156,89 @@ func (_m *TrackStore) TrackByID(_a0 context.Context, _a1 int) (*model.Track, err
 	return r0, r1
 }
 
-// TrackStore_TrackByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TrackByID'
-type TrackStore_TrackByID_Call struct {
+// TrackStore_GetTrack_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTrack'
+type TrackStore_GetTrack_Call struct {
 	*mock.Call
 }
 
-// TrackByID is a helper method to define mock.On call
+// GetTrack is a helper method to define mock.On call
 //   - _a0 context.Context
 //   - _a1 int
-func (_e *TrackStore_Expecter) TrackByID(_a0 interface{}, _a1 interface{}) *TrackStore_TrackByID_Call {
-	return &TrackStore_TrackByID_Call{Call: _e.mock.On("TrackByID", _a0, _a1)}
+func (_e *TrackStore_Expecter) GetTrack(_a0 interface{}, _a1 interface{}) *TrackStore_GetTrack_Call {
+	return &TrackStore_GetTrack_Call{Call: _e.mock.On("GetTrack", _a0, _a1)}
 }
 
-func (_c *TrackStore_TrackByID_Call) Run(run func(_a0 context.Context, _a1 int)) *TrackStore_TrackByID_Call {
+func (_c *TrackStore_GetTrack_Call) Run(run func(_a0 context.Context, _a1 int)) *TrackStore_GetTrack_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(int))
 	})
 	return _c
 }
 
-func (_c *TrackStore_TrackByID_Call) Return(_a0 *model.Track, _a1 error) *TrackStore_TrackByID_Call {
+func (_c *TrackStore_GetTrack_Call) Return(_a0 *model.Track, _a1 error) *TrackStore_GetTrack_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *TrackStore_TrackByID_Call) RunAndReturn(run func(context.Context, int) (*model.Track, error)) *TrackStore_TrackByID_Call {
+func (_c *TrackStore_GetTrack_Call) RunAndReturn(run func(context.Context, int) (*model.Track, error)) *TrackStore_GetTrack_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTracks provides a mock function with given fields: _a0
+func (_m *TrackStore) GetTracks(_a0 context.Context) ([]model.Track, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTracks")
+	}
+
+	var r0 []model.Track
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]model.Track, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []model.Track); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Track)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TrackStore_GetTracks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTracks'
+type TrackStore_GetTracks_Call struct {
+	*mock.Call
+}
+
+// GetTracks is a helper method to define mock.On call
+//   - _a0 context.Context
+func (_e *TrackStore_Expecter) GetTracks(_a0 interface{}) *TrackStore_GetTracks_Call {
+	return &TrackStore_GetTracks_Call{Call: _e.mock.On("GetTracks", _a0)}
+}
+
+func (_c *TrackStore_GetTracks_Call) Run(run func(_a0 context.Context)) *TrackStore_GetTracks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *TrackStore_GetTracks_Call) Return(_a0 []model.Track, _a1 error) *TrackStore_GetTracks_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *TrackStore_GetTracks_Call) RunAndReturn(run func(context.Context) ([]model.Track, error)) *TrackStore_GetTracks_Call {
 	_c.Call.Return(run)
 	return _c
 }

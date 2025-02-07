@@ -88,7 +88,7 @@ func (s *TrackStore) CreateTrack(ctx context.Context, attrs *model.TrackAttrs) (
 	return &model.Track{ID: id, Attrs: *attrs}, nil
 }
 
-func (s *TrackStore) TrackByID(ctx context.Context, id int) (*model.Track, error) {
+func (s *TrackStore) GetTrack(ctx context.Context, id int) (*model.Track, error) {
 	var track model.Track
 	err := s.withTimeout(ctx, func(ctx context.Context) error {
 		row := s.db.QueryRowContext(ctx, "SELECT id, title FROM tracks WHERE id=$1", id)
@@ -105,7 +105,7 @@ func (s *TrackStore) TrackByID(ctx context.Context, id int) (*model.Track, error
 	return &track, nil
 }
 
-func (s *TrackStore) AllTracks(ctx context.Context) ([]model.Track, error) {
+func (s *TrackStore) GetTracks(ctx context.Context) ([]model.Track, error) {
 	var tracks []model.Track
 	err := s.withTimeout(ctx, func(ctx context.Context) (err error) {
 		rows, err := s.db.QueryContext(ctx, "SELECT id, title FROM tracks")

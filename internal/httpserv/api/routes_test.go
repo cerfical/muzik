@@ -9,7 +9,9 @@ import (
 
 	"github.com/cerfical/muzik/internal/httpserv/api"
 	"github.com/cerfical/muzik/internal/mocks"
+	"github.com/cerfical/muzik/internal/model"
 	"github.com/gavv/httpexpect/v2"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,6 +36,17 @@ func (t *RoutesTest) SetupSubTest() {
 			Transport: httpexpect.NewBinder(api.NewHandler(t.store, nil)),
 		},
 	})
+
+	e := t.store.EXPECT()
+	e.GetTracks(mock.Anything).
+		Return([]model.Track{}, nil).
+		Maybe()
+	e.GetTrack(mock.Anything, mock.Anything).
+		Return(&model.Track{}, nil).
+		Maybe()
+	e.CreateTrack(mock.Anything, &model.TrackAttrs{}).
+		Return(&model.Track{}, nil).
+		Maybe()
 }
 
 func (t *RoutesTest) TestContentTypeCheck_Ok() {
@@ -50,7 +63,8 @@ func (t *RoutesTest) TestContentTypeCheck_Ok() {
 			e := t.expect.POST("/").
 				WithHeader("Content-Type", test.contentType).
 				Expect()
-			t.NotEqual(http.StatusUnsupportedMediaType, e.Raw().StatusCode)
+
+			e.Status(http.StatusBadRequest)
 		})
 	}
 }
@@ -72,10 +86,9 @@ func (t *RoutesTest) TestContentTypeCheck_Fail() {
 				WithHeader("Content-Type", test.contentType).
 				Expect()
 
-			e.Header("Accept-Post").IsEqual("application/json")
 			e.Status(http.StatusUnsupportedMediaType).
-				JSON().
-				Schema(errorSchema())
+				Header("Accept-Post").IsEqual("application/json")
+			e.JSON().Schema(errorSchema())
 		})
 	}
 }
@@ -92,10 +105,11 @@ func (t *RoutesTest) TestAcceptHeaderCheck_Ok() {
 
 	for _, test := range tests {
 		t.Run(test.name, func() {
-			e := t.expect.POST("/").
+			e := t.expect.GET("/").
 				WithHeader("Accept", test.accept).
 				Expect()
-			t.NotEqual(http.StatusNotAcceptable, e.Raw().StatusCode)
+
+			e.Status(http.StatusOK)
 		})
 	}
 }
@@ -125,31 +139,35 @@ func (t *RoutesTest) TestAcceptHeaderCheck_Fail() {
 	}
 }
 
-func (t *RoutesTest) TestAllowedMethodsCheck_Ok() {
+func (t *RoutesTest) TestAllowMethods_Ok() {
 	tests := []struct {
 		name         string
 		method, path string
+		status       int
 	}{
-		{"post", "POST", "/"},
+		{"post_to_collection", "POST", "/", http.StatusBadRequest},
+		{"get_to_collection", "GET", "/", http.StatusOK},
+		{"get_to_id", "GET", "/1", http.StatusOK},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func() {
 			e := t.expect.Request(test.method, test.path).
 				Expect()
-			t.NotEqual(http.StatusMethodNotAllowed, e.Raw().Status)
+
+			e.Status(test.status)
 		})
 	}
 }
 
-func (t *RoutesTest) TestAllowedMethodsCheck_Fail() {
+func (t *RoutesTest) TestAllowMethods_Fail() {
 	tests := []struct {
 		name         string
 		method, path string
 		allow        string
 	}{
-		{"post_to_id", "POST", "/1", "GET"},
-		{"put", "PUT", "/", "GET, POST"},
+		{"unknown_method_to_collection", "SOMEMETHOD", "/", "GET, POST"},
+		{"unknown_method_to_id", "SOMEMETHOD", "/1", "GET"},
 	}
 
 	for _, test := range tests {

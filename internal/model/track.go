@@ -18,6 +18,6 @@ type TrackStore interface {
 	io.Closer
 
 	CreateTrack(context.Context, *TrackAttrs) (*Track, error)
-	TrackByID(context.Context, int) (*Track, error)
-	AllTracks(context.Context) ([]Track, error)
+	GetTrack(context.Context, int) (*Track, error)
+	GetTracks(context.Context) ([]Track, error)
 }

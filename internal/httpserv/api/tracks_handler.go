@@ -21,7 +21,7 @@ func (h *tracksHandler) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	track, err := h.store.TrackByID(r.Context(), id)
+	track, err := h.store.GetTrack(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
 			notFound(w, r)
@@ -37,7 +37,7 @@ func (h *tracksHandler) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *tracksHandler) getAll(w http.ResponseWriter, r *http.Request) {
-	tracks, err := h.store.AllTracks(r.Context())
+	tracks, err := h.store.GetTracks(r.Context())
 	if err != nil {
 		internalError("Failed to read tracks data from persistent storage", err, h.log)(w, r)
 		return
