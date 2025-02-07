@@ -21,6 +21,7 @@ func setupRouter(store model.TrackStore, log *log.Logger) http.Handler {
 
 	tracks := tracksHandler{store, log}
 	router.HandleFunc("/api/tracks/{id}", fillPathParams(tracks.get)).Methods("GET")
+	router.HandleFunc("/api/tracks/{id}", fillPathParams(tracks.delete)).Methods("DELETE")
 	router.HandleFunc("/api/tracks/", tracks.getAll).Methods("GET")
 	router.HandleFunc("/api/tracks/", tracks.create).Methods("POST")
 

@@ -20,4 +20,5 @@ type TrackStore interface {
 	CreateTrack(context.Context, *TrackAttrs) (*Track, error)
 	GetTrack(context.Context, int) (*Track, error)
 	GetTracks(context.Context) ([]Track, error)
+	DeleteTrack(context.Context, int) error
 }

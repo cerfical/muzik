@@ -44,6 +44,9 @@ func (t *RoutesTest) SetupSubTest() {
 	e.GetTrack(mock.Anything, mock.Anything).
 		Return(&model.Track{}, nil).
 		Maybe()
+	e.DeleteTrack(mock.Anything, mock.Anything).
+		Return(nil).
+		Maybe()
 	e.CreateTrack(mock.Anything, &model.TrackAttrs{}).
 		Return(&model.Track{}, nil).
 		Maybe()
@@ -148,6 +151,7 @@ func (t *RoutesTest) TestAllowMethods_Ok() {
 		{"post_to_collection", "POST", "/", http.StatusBadRequest},
 		{"get_to_collection", "GET", "/", http.StatusOK},
 		{"get_to_id", "GET", "/1", http.StatusOK},
+		{"delete_to_id", "DELETE", "/1", http.StatusNoContent},
 	}
 
 	for _, test := range tests {
@@ -167,7 +171,7 @@ func (t *RoutesTest) TestAllowMethods_Fail() {
 		allow        string
 	}{
 		{"unknown_method_to_collection", "SOMEMETHOD", "/", "GET, POST"},
-		{"unknown_method_to_id", "SOMEMETHOD", "/1", "GET"},
+		{"unknown_method_to_id", "SOMEMETHOD", "/1", "DELETE, GET"},
 	}
 
 	for _, test := range tests {

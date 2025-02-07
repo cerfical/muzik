@@ -132,6 +132,25 @@ func (s *TrackStore) GetTracks(ctx context.Context) ([]model.Track, error) {
 	return tracks, err
 }
 
+func (s *TrackStore) DeleteTrack(ctx context.Context, id int) error {
+	return s.withTimeout(ctx, func(ctx context.Context) error {
+		res, err := s.db.ExecContext(ctx, "DELETE FROM tracks WHERE id=$1", id)
+		if err != nil {
+			return err
+		}
+
+		n, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+
+		if n != 1 {
+			return model.ErrNotFound
+		}
+		return nil
+	})
+}
+
 func (s *TrackStore) withTimeout(ctx context.Context, f func(ctx context.Context) error) error {
 	timedCtx := ctx
 	if s.timeout > 0 {

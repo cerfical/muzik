@@ -138,3 +138,27 @@ func (t *TracksTest) TestTracks_Create_BadRequest() {
 	e.Status(http.StatusBadRequest)
 	e.JSON().Schema(errorSchema())
 }
+
+func (t *TracksTest) TestTracks_Delete_Ok() {
+	t.store.EXPECT().
+		DeleteTrack(mock.Anything, 1).
+		Return(nil)
+
+	e := t.expect.DELETE("/1").
+		Expect()
+
+	e.Status(http.StatusNoContent)
+	e.Body().IsEmpty()
+}
+
+func (t *TracksTest) TestTracks_Delete_NotFound() {
+	t.store.EXPECT().
+		DeleteTrack(mock.Anything, 3).
+		Return(model.ErrNotFound)
+
+	e := t.expect.DELETE("/3").
+		Expect()
+
+	e.Status(http.StatusNotFound)
+	e.JSON().Schema(errorSchema())
+}

@@ -78,3 +78,22 @@ func (h *tracksHandler) create(w http.ResponseWriter, r *http.Request) {
 		Data: track,
 	})
 }
+
+func (h *tracksHandler) delete(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		notFound(w, r)
+		return
+	}
+
+	if err := h.store.DeleteTrack(r.Context(), id); err != nil {
+		if errors.Is(err, model.ErrNotFound) {
+			notFound(w, r)
+		} else {
+			internalError("Failed to delete track data from persistent storage", err, h.log)(w, r)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

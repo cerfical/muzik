@@ -126,6 +126,53 @@ func (_c *TrackStore_CreateTrack_Call) RunAndReturn(run func(context.Context, *m
 	return _c
 }
 
+// DeleteTrack provides a mock function with given fields: _a0, _a1
+func (_m *TrackStore) DeleteTrack(_a0 context.Context, _a1 int) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteTrack")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TrackStore_DeleteTrack_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteTrack'
+type TrackStore_DeleteTrack_Call struct {
+	*mock.Call
+}
+
+// DeleteTrack is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 int
+func (_e *TrackStore_Expecter) DeleteTrack(_a0 interface{}, _a1 interface{}) *TrackStore_DeleteTrack_Call {
+	return &TrackStore_DeleteTrack_Call{Call: _e.mock.On("DeleteTrack", _a0, _a1)}
+}
+
+func (_c *TrackStore_DeleteTrack_Call) Run(run func(_a0 context.Context, _a1 int)) *TrackStore_DeleteTrack_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int))
+	})
+	return _c
+}
+
+func (_c *TrackStore_DeleteTrack_Call) Return(_a0 error) *TrackStore_DeleteTrack_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TrackStore_DeleteTrack_Call) RunAndReturn(run func(context.Context, int) error) *TrackStore_DeleteTrack_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTrack provides a mock function with given fields: _a0, _a1
 func (_m *TrackStore) GetTrack(_a0 context.Context, _a1 int) (*model.Track, error) {
 	ret := _m.Called(_a0, _a1)
