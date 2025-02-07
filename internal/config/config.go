@@ -11,6 +11,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+func MustLoad(args []string) *Config {
+	cfg, err := Load(args)
+	if err != nil {
+		log.New().Fatal("Failed to load configuration", err)
+	}
+	return cfg
+}
+
 func Load(args []string) (*Config, error) {
 	v := viper.New()
 	if len(args) > 1 {

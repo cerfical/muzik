@@ -27,43 +27,54 @@ func (h *tracksHandler) get(w http.ResponseWriter, r *http.Request) {
 			notFound(w, r)
 			return
 		}
-
-		h.log.Error("failed to retrieve track data from storage", err)
-		internalError(w, r)
-
+		internalError("Failed to read track data from persistent storage", err, h.log)(w, r)
 		return
 	}
 
-	encodeData(w, &track, http.StatusOK)
+	encode(w, http.StatusOK, trackDataResponse{
+		Data: track,
+	})
 }
 
 func (h *tracksHandler) getAll(w http.ResponseWriter, r *http.Request) {
 	tracks, err := h.store.AllTracks(r.Context())
 	if err != nil {
-		h.log.Error("failed to retrieve tracks data from storage", err)
-		internalError(w, r)
+		internalError("Failed to read tracks data from persistent storage", err, h.log)(w, r)
 		return
 	}
 
-	encodeData(w, tracks, http.StatusOK)
+	encode(w, http.StatusOK, tracksDataResponse{
+		Data: tracks,
+	})
 }
 
 func (h *tracksHandler) create(w http.ResponseWriter, r *http.Request) {
-	trackAttrs, err := decodeData[*model.TrackAttrs](r.Body)
+	newTrack, err := decode[newTrackRequest](r.Body)
 	if err != nil {
-		badRequest(err)(w, r)
+		if parseErr := (*parseError)(nil); errors.As(err, &parseErr) {
+			encode(w, http.StatusBadRequest, errorResponse{
+				Errors: []errorInfo{{
+					Title:  "The request body is malformed",
+					Detail: parseErr.Error(),
+					Status: http.StatusBadRequest,
+				}},
+			})
+		} else {
+			internalError("Parsing of the request body was interrupted due to an unexpected error", err, h.log)(w, r)
+		}
 		return
 	}
 
-	track, err := h.store.CreateTrack(r.Context(), trackAttrs)
+	track, err := h.store.CreateTrack(r.Context(), (*model.TrackAttrs)(&newTrack.Data.Attrs))
 	if err != nil {
-		h.log.Error("failed to save track data to storage", err)
-		internalError(w, r)
+		internalError("Failed to save track data to persistent storage", err, h.log)(w, r)
 		return
 	}
 
 	location := r.URL.JoinPath(strconv.Itoa(track.ID))
 	w.Header().Set("Location", location.String())
 
-	encodeData(w, track, http.StatusCreated)
+	encode(w, http.StatusCreated, trackDataResponse{
+		Data: track,
+	})
 }

@@ -58,14 +58,15 @@ func accepts(mediaType string) func(http.Handler) http.Handler {
 				return
 			}
 
-			details := fmt.Sprintf("The only acceptable media type is '%s'", mediaType)
-			encodeError(w, &apiError{
-				Title:  "Media type is not acceptable",
-				Detail: details,
-				Status: http.StatusNotAcceptable,
-				Source: &errorSource{
-					Header: "Accept",
-				},
+			encode(w, http.StatusNotAcceptable, errorResponse{
+				Errors: []errorInfo{{
+					Title:  "Media type is not acceptable",
+					Detail: fmt.Sprintf("The only acceptable media type is '%s'", mediaType),
+					Status: http.StatusNotAcceptable,
+					Source: &errorSource{
+						Header: "Accept",
+					},
+				}},
 			})
 		})
 	}
@@ -129,14 +130,15 @@ func hasContentType(mediaType string) func(http.Handler) http.Handler {
 				w.Header().Set(h, mediaType)
 			}
 
-			details := fmt.Sprintf("Unexpected content type '%s', only '%s' is allowed", contentType, mediaType)
-			encodeError(w, &apiError{
-				Title:  "Media type is unsupported",
-				Detail: details,
-				Status: http.StatusUnsupportedMediaType,
-				Source: &errorSource{
-					Header: "Content-Type",
-				},
+			encode(w, http.StatusUnsupportedMediaType, errorResponse{
+				Errors: []errorInfo{{
+					Title:  "Media type is unsupported",
+					Detail: fmt.Sprintf("Unexpected content type '%s', only '%s' is allowed", contentType, mediaType),
+					Status: http.StatusUnsupportedMediaType,
+					Source: &errorSource{
+						Header: "Content-Type",
+					},
+				}},
 			})
 		})
 	}
@@ -189,8 +191,7 @@ func panicRecover(log *log.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if e := recover(); e != nil {
-					log.Error("recovered from panic", errors.Errorf("%v", e))
-					internalError(w, r)
+					internalError("Recovered from panic", errors.Errorf("%v", e), log)(w, r)
 				}
 			}()
 

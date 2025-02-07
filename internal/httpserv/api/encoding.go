@@ -7,11 +7,25 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/cerfical/muzik/internal/model"
 )
 
 const encodeMediaType = "application/json"
 
-type apiError struct {
+type trackDataResponse struct {
+	Data *model.Track `json:"data"`
+}
+
+type tracksDataResponse struct {
+	Data []model.Track `json:"data"`
+}
+
+type errorResponse struct {
+	Errors []errorInfo `json:"errors"`
+}
+
+type errorInfo struct {
 	Status int          `json:"status,string"`
 	Title  string       `json:"title"`
 	Detail string       `json:"detail,omitempty"`
@@ -22,65 +36,70 @@ type errorSource struct {
 	Header string `json:"header"`
 }
 
-func decodeData[T any](r io.Reader) (T, error) {
+type newTrackRequest struct {
+	Data *model.Track `json:"data"`
+}
+
+func encode(w http.ResponseWriter, status int, r any) {
+	w.Header().Set("Content-Type", encodeMediaType)
+	w.WriteHeader(status)
+
+	json.NewEncoder(w).Encode(r)
+}
+
+func decode[T any](r io.Reader) (*T, error) {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 
-	var empty T
-	var request struct {
-		Data struct {
-			Attrs T `json:"attributes"`
-		} `json:"data"`
-	}
-
-	if err := dec.Decode(&request); err != nil {
+	var req T
+	if err := dec.Decode(&req); err != nil {
 		if errMsg, ok := describeError(err); ok {
-			return empty, &parseError{errMsg}
+			return nil, &parseError{errMsg}
 		}
-		return empty, err
+		return nil, err
 	}
 
 	if err := dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		return empty, &parseError{"request body must contain a single JSON object"}
+		return nil, &parseError{"The request body must contain a single JSON object"}
 	}
 
-	return request.Data.Attrs, nil
+	return &req, nil
 }
 
 func describeError(err error) (string, bool) {
 	// Check for type errors
 	if e := (&json.UnmarshalTypeError{}); errors.As(err, &e) {
 		if e.Field != "" {
-			return fmt.Sprintf("invalid value for a field '%s'", e.Field), true
+			return fmt.Sprintf("The request body contains an invalid value for the field '%s'", e.Field), true
 		}
-		return "root element is invalid", true
+		return "The root element of the request body is invalid", true
 	}
 
 	// Check for generic syntax errors
 	if e := (&json.SyntaxError{}); errors.As(err, &e) {
-		return fmt.Sprintf("syntax error at position %d", e.Offset), true
+		return fmt.Sprintf("The request body has a syntax error at position %d", e.Offset), true
 	}
 
 	// Check for empty request body
 	if errors.Is(err, io.EOF) {
-		return "request body must not be empty", true
+		return "The request body must not be empty", true
 	}
 
 	// TODO: https://github.com/golang/go/issues/25956
 	if errors.Is(err, io.ErrUnexpectedEOF) {
-		return "request body is not valid JSON", true
+		return "The request body contains invalid JSON content", true
 	}
 
 	// TODO: https://github.com/golang/go/issues/29035
 	errMsg := err.Error()
 	if unknownFieldMsg := `json: unknown field "`; strings.HasPrefix(errMsg, unknownFieldMsg) {
 		field := strings.TrimSuffix(strings.TrimPrefix(errMsg, unknownFieldMsg), `"`)
-		return fmt.Sprintf("unknown field '%s'", field), true
+		return fmt.Sprintf("The request body contains an unknown field '%s'", field), true
 	}
 
 	// TODO: Provide more info about errors, maybe?
 	if strings.HasPrefix(errMsg, "json: invalid use of ,string struct tag") {
-		return "some fields are expected to be strings, but are not", true
+		return "The request body contains fields with unexpected values", true
 	}
 
 	return "", false
@@ -92,31 +111,4 @@ type parseError struct {
 
 func (e *parseError) Error() string {
 	return e.msg
-}
-
-func encodeData[T any](w http.ResponseWriter, data T, status int) error {
-	response := struct {
-		Data T `json:"data"`
-	}{
-		Data: data,
-	}
-
-	return encodeJSON(w, &response, status)
-}
-
-func encodeError(w http.ResponseWriter, e *apiError) error {
-	response := struct {
-		Errors []*apiError `json:"errors"`
-	}{
-		Errors: []*apiError{e},
-	}
-
-	return encodeJSON(w, &response, e.Status)
-}
-
-func encodeJSON(w http.ResponseWriter, data any, status int) error {
-	w.Header().Set("Content-Type", encodeMediaType)
-	w.WriteHeader(status)
-
-	return json.NewEncoder(w).Encode(data)
 }

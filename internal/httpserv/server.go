@@ -42,7 +42,7 @@ func (w *httpErrorLog) Write(p []byte) (int, error) {
 		n--
 	}
 
-	w.Error("error serving HTTP", errors.New(string(p)))
+	w.Error("HTTP server error", errors.New(string(p)))
 	return n, nil
 }
 
@@ -53,7 +53,7 @@ type Server struct {
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	s.log.WithFields("addr", s.serv.Addr).Info("starting up the server")
+	s.log.WithFields("addr", s.serv.Addr).Info("Starting up the server")
 
 	sigCtx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -81,9 +81,9 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 
 	// Try to shutdown the server cleanly and if that fails, close the server
-	s.log.Info("shutting down the server")
+	s.log.Info("Shutting down the server")
 	if err := s.serv.Shutdown(timedCtx); err != nil {
-		s.log.Error("error shutting down the server", err)
+		s.log.Error("Failed to shut down the server", err)
 		s.serv.Close()
 		return err
 	}

@@ -4,8 +4,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/cerfical/muzik/internal/strutil"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
 )
@@ -55,7 +53,7 @@ func (l *Logger) log(lvl Level, msg string, err error) {
 	if err != nil {
 		logEv = logEv.Err(err)
 	}
-	logEv.Msg(strutil.Capitalize(msg))
+	logEv.Msg(msg)
 }
 
 func (l *Logger) WithLevel(lvl Level) *Logger {
