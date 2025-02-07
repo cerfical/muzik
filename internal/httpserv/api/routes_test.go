@@ -91,7 +91,7 @@ func (t *RoutesTest) TestContentTypeCheck_Fail() {
 
 			e.Status(http.StatusUnsupportedMediaType).
 				Header("Accept-Post").IsEqual("application/json")
-			e.JSON().Schema(errorSchema())
+			e.JSON().Schema(errorResponse())
 		})
 	}
 }
@@ -137,7 +137,7 @@ func (t *RoutesTest) TestAcceptHeaderCheck_Fail() {
 				Expect()
 
 			e.Status(http.StatusNotAcceptable)
-			e.JSON().Schema(errorSchema())
+			e.JSON().Schema(errorResponse())
 		})
 	}
 }
@@ -179,23 +179,23 @@ func (t *RoutesTest) TestAllowMethods_Fail() {
 			e := t.expect.Request(test.method, test.path).
 				Expect()
 
-			e.JSON().Schema(errorSchema())
+			e.JSON().Schema(errorResponse())
 			e.Status(http.StatusMethodNotAllowed).
 				Header("Allow").IsEqual(test.allow)
 		})
 	}
 }
 
-func trackDataResponseSchema() string {
-	return schema("TrackResource")
+func trackDataResponse() string {
+	return schema("TrackDataResponse")
 }
 
-func tracksDataResponseSchema() string {
-	return schema("TracksResource")
+func tracksDataResponse() string {
+	return schema("TracksDataResponse")
 }
 
-func errorSchema() string {
-	return schema("Error")
+func errorResponse() string {
+	return schema("ErrorResponse")
 }
 
 func schema(name string) string {
@@ -209,5 +209,5 @@ func schema(name string) string {
 		panic(err)
 	}
 
-	return fmt.Sprintf("file://%s#/$def/%s", p, name)
+	return fmt.Sprintf("file://%s#/$defs/%s", p, name)
 }

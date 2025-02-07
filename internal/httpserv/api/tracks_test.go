@@ -64,7 +64,7 @@ func (t *TracksTest) TestTracks_Get_Ok() {
 		Expect()
 
 	e.Status(http.StatusOK)
-	e.JSON().Schema(trackDataResponseSchema()).
+	e.JSON().Schema(trackDataResponse()).
 		IsEqual(&response)
 }
 
@@ -77,7 +77,7 @@ func (t *TracksTest) TestTracks_Get_NotFound() {
 		Expect()
 
 	e.Status(http.StatusNotFound)
-	e.JSON().Schema(errorSchema())
+	e.JSON().Schema(errorResponse())
 }
 
 func (t *TracksTest) TestTracks_GetAll_Ok() {
@@ -94,7 +94,7 @@ func (t *TracksTest) TestTracks_GetAll_Ok() {
 		Expect()
 
 	e.Status(http.StatusOK)
-	e.JSON().Schema(tracksDataResponseSchema()).
+	e.JSON().Schema(tracksDataResponse()).
 		IsEqual(&response)
 }
 
@@ -126,7 +126,7 @@ func (t *TracksTest) TestTracks_Create_Ok() {
 	e.Status(http.StatusCreated).
 		Header("Location").IsEqual("/api/tracks/1")
 
-	e.JSON().Schema(trackDataResponseSchema()).
+	e.JSON().Schema(trackDataResponse()).
 		IsEqual(&response)
 }
 
@@ -136,7 +136,7 @@ func (t *TracksTest) TestTracks_Create_BadRequest() {
 		Expect()
 
 	e.Status(http.StatusBadRequest)
-	e.JSON().Schema(errorSchema())
+	e.JSON().Schema(errorResponse())
 }
 
 func (t *TracksTest) TestTracks_Delete_Ok() {
@@ -160,5 +160,5 @@ func (t *TracksTest) TestTracks_Delete_NotFound() {
 		Expect()
 
 	e.Status(http.StatusNotFound)
-	e.JSON().Schema(errorSchema())
+	e.JSON().Schema(errorResponse())
 }

@@ -37,7 +37,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/NewTrackResource" }
+            schema: { $ref: "#/components/schemas/NewTrackRequest" }
       responses:
         "201": { $ref: "#/components/responses/TrackResource" }
         "400": { $ref: "#/components/responses/BadRequest" }
@@ -48,31 +48,30 @@ components:
       description: OK
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/TrackResource" }
+          schema: { $ref: "#/components/schemas/TrackDataResponse" }
     TracksResource:
       description: OK
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/TracksResource" }
+          schema: { $ref: "#/components/schemas/TracksDataResponse" }
     BadRequest:
       description: Request is ill-formed
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Error" }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     NotFound:
       description: Referencing a non-existent resource
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Error" }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     InternalError:
       description: Reports an internal server failure
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Error" }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
   schemas:
-    Track: { $ref: "models.json#/$def/Track" }
-    TrackInfo: { $ref: "models.json#/$def/TrackInfo" }
-    NewTrackResource: { $ref: "models.json#/$def/NewTrackResource" }
-    TrackResource: { $ref: "models.json#/$def/TrackResource" }
-    TracksResource: { $ref: "models.json#/$def/TracksResource" }
-    Error: { $ref: "models.json#/$def/Error" }
+    Track: { $ref: "models.json#/$defs/Track" }
+    NewTrackRequest: { $ref: "models.json#/$defs/NewTrackRequest" }
+    TrackDataResponse: { $ref: "models.json#/$defs/TrackDataResponse" }
+    TracksDataResponse: { $ref: "models.json#/$defs/TracksDataResponse" }
+    ErrorResponse: { $ref: "models.json#/$defs/ErrorResponse" }

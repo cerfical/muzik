@@ -1,42 +1,38 @@
 {
-    "$def": {
-        "TrackResource": {
+    "$defs": {
+        "TrackDataResponse": {
             "description": "Describes the structure of successful responses to GET requests asking for a single track",
             "type": "object",
             "properties": {
-                "data": { "$ref": "#/$def/Track" }
+                "data": { "$ref": "#/$defs/Track" }
             },
-            "required": [ "data" ],
+            "required": ["data"],
             "additionalProperties": false
         },
-        "TracksResource": {
+
+        "TracksDataResponse": {
             "description": "Describes the structure of successful responses to GET requests asking for a collection of tracks",
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
-                    "items": { "$ref": "#/$def/Track" }
+                    "items": { "$ref": "#/$defs/Track" }
                 }
             },
-            "required": [ "data" ],
+            "required": ["data"],
             "additionalProperties": false
         },
-        "NewTrackResource": {
+
+        "NewTrackRequest": {
             "description": "Describes the structure of POST requests for creating new tracks",
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "attributes": { "$ref": "#/$def/TrackInfo" }
-                    },
-                    "required": [ "attributes" ],
-                    "additionalProperties": false
-                }
+                "data": { "$ref": "#/$defs/Track" }
             },
-            "required": [ "data" ],
+            "required": ["data"],
             "additionalProperties": false
         },
+
         "Track": {
             "description": "Defines the data model for music tracks",
             "type": "object",
@@ -45,21 +41,20 @@
                     "type": "string",
                     "readOnly": true
                 },
-                "attributes": { "$ref": "#/$def/TrackInfo" }
+                "attributes": {
+                    "type": "object",
+                    "properties": {
+                        "title": { "type": "string" }
+                    },
+                    "required": ["title"],
+                    "additionalProperties": false
+                }
             },
-            "required": [ "id", "attributes" ],
+            "required": ["id", "attributes"],
             "additionalProperties": false
         },
-        "TrackInfo": {
-            "description": "Contains information about a single music track",
-            "type": "object",
-            "properties": {
-                "title": { "type": "string" }
-            },
-            "required": [ "title" ],
-            "additionalProperties": false
-        },
-        "Error": {
+
+        "ErrorResponse": {
             "description": "Defines the structure of error responses as returned by server",
             "type": "object",
             "properties": {
@@ -76,16 +71,16 @@
                                 "properties": {
                                     "header": { "type": "string" }
                                 },
-                                "required": [ "header" ],
+                                "required": ["header"],
                                 "additionalProperties": false
                             }
                         },
-                        "required": [ "status", "title" ],
+                        "required": ["status", "title"],
                         "additionalProperties": false
                     }
                 }
             },
-            "required": [ "errors" ],
+            "required": ["errors"],
             "additionalProperties": false
         }
     }
