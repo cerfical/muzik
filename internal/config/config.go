@@ -14,7 +14,8 @@ import (
 func MustLoad(args []string) *Config {
 	cfg, err := Load(args)
 	if err != nil {
-		log.New().Fatal("Failed to load configuration", err)
+		log := log.New(&log.Config{})
+		log.Fatal("Failed to load the configuration", err)
 	}
 	return cfg
 }
@@ -62,7 +63,5 @@ func load(v *viper.Viper) (*Config, error) {
 type Config struct {
 	Server httpserv.Config
 	DB     postgres.Config
-	Log    struct {
-		Level log.Level
-	}
+	Log    log.Config
 }

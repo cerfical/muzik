@@ -13,6 +13,10 @@ const (
 	LevelInfo  = Level(zerolog.InfoLevel)
 )
 
+type Config struct {
+	Level Level
+}
+
 type Level zerolog.Level
 
 func (l *Level) UnmarshalText(text []byte) error {

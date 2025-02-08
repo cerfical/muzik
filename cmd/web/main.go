@@ -12,7 +12,7 @@ import (
 
 func main() {
 	config := config.MustLoad(os.Args)
-	log := log.New().WithLevel(config.Log.Level)
+	log := log.New(&config.Log)
 
 	server := httpserv.New(&config.Server, http.FileServer(http.Dir("static")), log)
 	if err := server.Run(context.Background()); err != nil {

@@ -8,13 +8,14 @@ import (
 	"github.com/rs/zerolog/pkgerrors"
 )
 
-func New() *Logger {
+func New(cfg *Config) *Logger {
 	out := zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
 		w.TimeFormat = time.DateTime
 	})
 
 	return &Logger{
-		logger: zerolog.New(out).With().
+		logger: zerolog.New(out).
+			Level(zerolog.Level(cfg.Level)).With().
 			Stack().
 			Timestamp().
 			Logger(),
@@ -54,14 +55,6 @@ func (l *Logger) log(lvl Level, msg string, err error) {
 		logEv = logEv.Err(err)
 	}
 	logEv.Msg(msg)
-}
-
-func (l *Logger) WithLevel(lvl Level) *Logger {
-	if l == nil {
-		return l
-	}
-
-	return &Logger{l.logger.Level(zerolog.Level(lvl))}
 }
 
 func (l *Logger) WithFields(fields ...any) *Logger {

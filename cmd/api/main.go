@@ -13,7 +13,7 @@ import (
 func main() {
 	config := config.MustLoad(os.Args)
 
-	log := log.New().WithLevel(config.Log.Level)
+	log := log.New(&config.Log)
 	log.WithFields(
 		"addr", config.DB.Addr,
 		"user", config.DB.User,
