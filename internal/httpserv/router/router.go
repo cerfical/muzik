@@ -4,7 +4,6 @@ package router
 import (
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 )
 
@@ -48,16 +47,9 @@ func (r *Router) Routes(path string, endpoints []Endpoint) *Router {
 		path += "{$}"
 	}
 
-	var allowedMethods []string
 	for _, endpoint := range endpoints {
 		r.mux.HandleFunc(fmt.Sprintf("%s %s", endpoint.Method, path), endpoint.Handler)
-		allowedMethods = append(allowedMethods, endpoint.Method)
 	}
-
-	// For all other methods with the same path, return a MethodNotAllowed error with a list of methods allowed for the path
-	slices.Sort(allowedMethods)
-	r.mux.HandleFunc(path, methodNotAllowed(strings.Join(allowedMethods, ", ")))
-
 	return r
 }
 
@@ -65,11 +57,4 @@ func (r *Router) Routes(path string, endpoints []Endpoint) *Router {
 func (r *Router) Use(m Middleware) *Router {
 	r.middleware = append(r.middleware, m)
 	return r
-}
-
-func methodNotAllowed(allowedMethods string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Allow", allowedMethods)
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	}
 }

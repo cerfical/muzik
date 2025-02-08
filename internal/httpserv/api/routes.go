@@ -12,12 +12,12 @@ func setupRoutes(store model.TrackStore, log *log.Logger) http.Handler {
 	tracks := tracksHandler{store, log}
 	router := router.New().
 		Routes("/api/tracks/{id}", []router.Endpoint{
-			{"GET", tracks.get},
-			{"DELETE", tracks.delete},
+			{Method: "GET", Handler: tracks.get},
+			{Method: "DELETE", Handler: tracks.delete},
 		}).
 		Routes("/api/tracks/", []router.Endpoint{
-			{"POST", tracks.create},
-			{"GET", tracks.getAll},
+			{Method: "POST", Handler: tracks.create},
+			{Method: "GET", Handler: tracks.getAll},
 		}).
 		Use(hasContentType(encodeMediaType)).
 		Use(accepts(encodeMediaType)).

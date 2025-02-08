@@ -102,9 +102,9 @@ func (t *RouterTest) TestRoutesWithPatterns() {
 					}
 				})
 
-			t.expect.GET(test.path).
-				Expect().
-				Status(http.StatusOK)
+			e := t.expect.GET(test.path).
+				Expect()
+			e.Status(http.StatusOK)
 		})
 	}
 }
@@ -118,7 +118,7 @@ func (t *RouterTest) TestAllowedMethods() {
 		allow  string
 	}{
 		{"200_ok", "GET", "/users/", http.StatusOK, ""},
-		{"405_unknown_method", "PUT", "/users/", http.StatusMethodNotAllowed, "GET"},
+		{"405_unknown_method", "PUT", "/users/", http.StatusMethodNotAllowed, "GET, HEAD"},
 		{"405_unknown_methods", "POST", "/articles/", http.StatusMethodNotAllowed, "PATCH, PUT"},
 	}
 
@@ -135,7 +135,6 @@ func (t *RouterTest) TestAllowedMethods() {
 
 			e.Status(test.status).
 				Header("Allow").IsEqual(test.allow)
-			e.Body().IsEmpty()
 		})
 	}
 }
