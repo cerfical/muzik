@@ -8,51 +8,13 @@ import (
 	"strings"
 
 	"github.com/cerfical/muzik/internal/log"
-	"github.com/cerfical/muzik/internal/strutil"
-	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
 
-// allowMethods populates Allow header with methods defined for the request path on a [mux.Router].
-func allowMethods(router *mux.Router, next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var allowedMethods []string
-		router.Walk(func(route *mux.Route, _ *mux.Router, _ []*mux.Route) error {
-			path, _ := route.GetPathTemplate()
-
-			matcher := mux.NewRouter()
-			matcher.Path(path)
-
-			var match mux.RouteMatch
-			if matcher.Match(r, &match) {
-				methods, _ := route.GetMethods()
-				allowedMethods = append(allowedMethods, methods...)
-			}
-			return nil
-		})
-
-		allowedMethods = strutil.Dedup(allowedMethods)
-		w.Header().Set("Allow", strings.Join(allowedMethods, ", "))
-
-		next(w, r)
-	})
-}
-
-// fillPathParams makes gorilla/mux path parameters available via [http.Request.PathValue].
-func fillPathParams(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		for key, val := range mux.Vars(r) {
-			r.SetPathValue(key, val)
-		}
-
-		next(w, r)
-	}
-}
-
 // accepts checks Accept header for the presence of the specified media type.
-func accepts(mediaType string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func accepts(mediaType string) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
 			if checkAcceptHeader(mediaType, r.Header.Get("Accept")) {
 				next.ServeHTTP(w, r)
 				return
@@ -68,7 +30,7 @@ func accepts(mediaType string) func(http.Handler) http.Handler {
 					},
 				}},
 			})
-		})
+		}
 	}
 }
 
@@ -117,9 +79,9 @@ func splitMediaType(mediaType string) (string, string) {
 }
 
 // hasContentType checks Content-Type for the presence of the specified media type.
-func hasContentType(mediaType string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func hasContentType(mediaType string) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
 			contentType := r.Header.Get("Content-Type")
 			if !hasContentBody(r) || checkContentType(contentType, mediaType) {
 				next.ServeHTTP(w, r)
@@ -140,7 +102,7 @@ func hasContentType(mediaType string) func(http.Handler) http.Handler {
 					},
 				}},
 			})
-		})
+		}
 	}
 }
 
@@ -186,9 +148,9 @@ func acceptHeaderForMethod(method string) (string, bool) {
 }
 
 // panicRecover intercepts and logs panics that occur in request handlers.
-func panicRecover(log *log.Logger) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func panicRecover(log *log.Logger) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if e := recover(); e != nil {
 					internalError("Recovered from panic", errors.Errorf("%v", e), log)(w, r)
@@ -196,6 +158,6 @@ func panicRecover(log *log.Logger) func(http.Handler) http.Handler {
 			}()
 
 			next.ServeHTTP(w, r)
-		})
+		}
 	}
 }

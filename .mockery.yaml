@@ -1,5 +1,8 @@
 with-expecter: true
 packages:
+  net/http:
+    interfaces:
+      Handler:
   github.com/cerfical/muzik/internal/model:
     interfaces:
       TrackStore:

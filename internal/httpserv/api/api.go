@@ -14,5 +14,5 @@ func NewServer(config *httpserv.Config, store model.TrackStore, log *log.Logger)
 }
 
 func NewHandler(store model.TrackStore, log *log.Logger) http.Handler {
-	return setupRouter(store, log)
+	return setupRoutes(store, log)
 }

@@ -142,50 +142,6 @@ func (t *RoutesTest) TestAcceptHeaderCheck_Fail() {
 	}
 }
 
-func (t *RoutesTest) TestAllowMethods_Ok() {
-	tests := []struct {
-		name         string
-		method, path string
-		status       int
-	}{
-		{"post_to_collection", "POST", "/", http.StatusBadRequest},
-		{"get_to_collection", "GET", "/", http.StatusOK},
-		{"get_to_id", "GET", "/1", http.StatusOK},
-		{"delete_to_id", "DELETE", "/1", http.StatusNoContent},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func() {
-			e := t.expect.Request(test.method, test.path).
-				Expect()
-
-			e.Status(test.status)
-		})
-	}
-}
-
-func (t *RoutesTest) TestAllowMethods_Fail() {
-	tests := []struct {
-		name         string
-		method, path string
-		allow        string
-	}{
-		{"unknown_method_to_collection", "SOMEMETHOD", "/", "GET, POST"},
-		{"unknown_method_to_id", "SOMEMETHOD", "/1", "DELETE, GET"},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func() {
-			e := t.expect.Request(test.method, test.path).
-				Expect()
-
-			e.JSON().Schema(errorResponse())
-			e.Status(http.StatusMethodNotAllowed).
-				Header("Allow").IsEqual(test.allow)
-		})
-	}
-}
-
 func trackDataResponse() string {
 	return schema("TrackDataResponse")
 }
